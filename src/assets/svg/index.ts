@@ -34,6 +34,10 @@ import IconSnsNaver from "./sns_naver.svg"
 import ProfileImage from "./ProfileImage.svg"
 import Cancle from "./cancle.svg"
 import IconComplete from "./Frame1206.svg"
+import ScheduleIcon from './scheduleIcon.svg'
+import PaletteIcon from './paletteIcon.svg'
+import AlarmIcon from './alarmIcon.svg'
+import RepeatIcon from './repeatIcon.svg'
 
 export {
 	BackButton,
@@ -71,5 +75,9 @@ export {
 	IconSnsNaver,
 	ProfileImage,
 	Cancle,
-	IconComplete
+	IconComplete,
+	ScheduleIcon,
+	PaletteIcon,
+	AlarmIcon,
+	RepeatIcon,
 }
