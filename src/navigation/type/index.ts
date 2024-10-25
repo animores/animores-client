@@ -1,5 +1,6 @@
 import { IProfile } from "../../../types/Profile";
 import { ScreenName } from "../../statics/constants/ScreenName"
+import {BreedTypeParam} from "../../../types/StackNavigationParam";
 
 export type RootStackParamList = {
     [ScreenName.Login]: undefined;
@@ -9,7 +10,7 @@ export type RootStackParamList = {
     [ScreenName.AddTodo]: undefined;
 	[ScreenName.PatManagement]: undefined;
 	[ScreenName.PetType]: undefined;
-	[ScreenName.BreedType]: undefined;
+	[ScreenName.BreedType]: BreedTypeParam;
 	[ScreenName.AddPet]: undefined;
 	[ScreenName.Mypage]: undefined;
 	[ScreenName.Home]: undefined;

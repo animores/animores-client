@@ -1,7 +1,7 @@
-import { useNavigation } from '@react-navigation/native';
+import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import InputSearch from '../../../components/Input/InputSearch';
 import SingleButton from '../../../components/button/SingleButton';
 import Title from '../../../components/text/Title';
@@ -9,12 +9,28 @@ import HeaderNavigation from '../../../navigation/HeaderNavigation';
 import { RootStackParamList } from '../../../navigation/type';
 import { ScreenName } from '../../../statics/constants/ScreenName';
 import { Colors } from '../../../styles/Colors';
+import {BreedTypeParam} from "../../../../types/StackNavigationParam";
+import {useQuery} from "@tanstack/react-query";
+import {QueryKey} from "../../../statics/constants/Querykey";
+import {PetService} from "../../../service/PetService";
+import {IBreedType} from "../../../../types/PetTypes";
+import AutoCompleteDropdown from "./AutoCompleteDropdown";
 
 const BreedType = () => {
     const navigation =
         useNavigation<StackNavigationProp<RootStackParamList, ScreenName.BreedType>>();
-
+    const [breedTypeList, setBreedTypeList] = useState<IBreedType[]>([]);
     const [keyword, setKeyword] = useState<string>('');
+    const route = useRoute<RouteProp<RootStackParamList, ScreenName.BreedType>>(),
+        {petType} = route.params;
+
+
+    useQuery(([QueryKey.BREED_LIST]), () => PetService.pet.breedList(petType), {
+        enabled : !!petType,
+        onSuccess: (data) => {
+            setBreedTypeList(data);
+        }
+    });
 
     return (
         <View style={styles.container}>
@@ -38,6 +54,7 @@ const BreedType = () => {
                         placeholder={'직접 입력하세요'}
                         onChangeText={setKeyword} />
                 </View>
+                <AutoCompleteDropdown searchText={keyword} suggestionList={breedTypeList.map(item => item.name)}/>
                 <View style={styles.buttonContainer}>
                     <SingleButton
                         title="다음"

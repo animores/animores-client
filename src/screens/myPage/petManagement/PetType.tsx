@@ -2,7 +2,7 @@ import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import React, { useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, View } from "react-native";
-import { IPetTypes } from "../../../../types/PetTypes";
+import { IPetType } from "../../../../types/PetTypes";
 import SingleButton from "../../../components/button/SingleButton";
 import Title from "../../../components/text/Title";
 import { petTypes } from "../../../data/PetTypes";
@@ -10,6 +10,12 @@ import HeaderNavigation from "../../../navigation/HeaderNavigation";
 import { RootStackParamList } from "../../../navigation/type";
 import { ScreenName } from "../../../statics/constants/ScreenName";
 import { Colors } from "../../../styles/Colors";
+import {useQuery} from "@tanstack/react-query";
+import { QueryKey } from "../../../statics/constants/Querykey";
+import {PetService} from "../../../service/PetService";
+import {AxiosError} from "axios";
+import PngImage from "../../../assets/png";
+
 
 const PetType = () => {
   const navigation =
@@ -17,7 +23,10 @@ const PetType = () => {
       StackNavigationProp<RootStackParamList, ScreenName.PetType>
     >();
 
-  const [petType, setPetType] = useState<string>("");
+  const [userSelectPetType, setUserSelectPetType] = useState<string>("");
+  const {data: petSpeciesList, error, isLoading, isSuccess} = useQuery<IPetType[], AxiosError, IPetType[], string[]>([QueryKey.PET_SPECIES], PetService.pet.speciesList);
+  // 펫 리스트 로딩 전 중 & 로딩 실패 시에 대한 화면 필요
+  if(isLoading || !isSuccess) return;
 
   return (
     <View style={styles.container}>
@@ -36,26 +45,26 @@ const PetType = () => {
             fontWeight="bold"
             style={{ marginTop: 52, marginBottom: 31 }}
           />
-          {petTypes.map((t: IPetTypes) => {
+          {petSpeciesList.map((petSpeciesItem: IPetType) => {
             return (
               <Pressable
-                key={t.id}
+                key={petSpeciesItem.id}
                 onPress={() => {
-                  setPetType(t.name);
+                  setUserSelectPetType(petSpeciesItem.name);
                 }}
                 style={[
                   styles.pressableType,
-                  petType === ""
+                  userSelectPetType === ""
                     ? styles.pressableType
-                    : petType === t.name
+                    : userSelectPetType === petSpeciesItem.name
                     ? styles.selectedType
                     : styles.unselectedType,
                 ]}
               >
-                <Image source={t.image} />
+                <Image source={PngImage.petType[`${PngImage.getPetType(petSpeciesItem.name)}`] || PngImage.petType.dog}/>
                 <Title
-                  text={t.name}
-                  fontWeight={petType ? "bold" : "normal"}
+                  text={petSpeciesItem.name}
+                  fontWeight={userSelectPetType ? "bold" : "normal"}
                   style={{ marginLeft: 16, alignSelf: "center" }}
                 />
               </Pressable>
@@ -65,13 +74,13 @@ const PetType = () => {
         <View style={styles.buttonContainer}>
           <SingleButton
             title={"다음"}
-            disabled={!petType}
+            disabled={!userSelectPetType}
             onPress={() => {
-              if (petType) {
-                navigation.navigate(ScreenName.BreedType);
+              if (userSelectPetType) {
+                navigation.navigate(ScreenName.BreedType , { petType : 1 });
               }
             }}
-            style={{ marginTop: 70 }} 
+            style={{ marginTop: 70 }}
           />
         </View>
       </View>
