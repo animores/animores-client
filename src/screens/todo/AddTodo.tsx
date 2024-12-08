@@ -380,6 +380,7 @@ const AddTodo = ({ route }: { route: AddToDoRouterProp }) => {
     }
     
     todo ? update(data) :mutate(data);
+    navigation.goBack();
   };
 
   const { mutate, isLoading: createLoading } = useMutation({
