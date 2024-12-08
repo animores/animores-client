@@ -23,10 +23,7 @@ import styled from "styled-components/native";
 import CenterModal from "../../components/modal/CenterModal";
 
 const AllTodoScreen = () => {
-  const navigation =
-    useNavigation<
-      StackNavigationProp<RootStackParamList, ScreenName.ToDoList>
-    >();
+  const [scrolledToDoIndex, setScrolledToDoIndex] = useState<number | null>(null);
   const [queryParam, setQueryParam] = useState<IListToDoParam>({
     done: null,
     pets: null,
@@ -41,7 +38,7 @@ const AllTodoScreen = () => {
         setPetList(response.data.data);
       });
     }
-  }, []);
+  }, [petList.length]);
 
   const [usePetListWindow, setUsePetListWindow] = useState<boolean>(false);
   const [clickedPetIds, setClickedPetIds] = useState<number[]>([]);
@@ -115,13 +112,15 @@ const AllTodoScreen = () => {
         {isLoading ? <Text>Loading...</Text> : toDoList.length === 0 && <Text>할 일이 없습니다.</Text>}
         <FlatList
           data={toDoList}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <ToDoCard
               todo={item}
               curTime={time}
               onDelete={() => {
                 setTodoIdToDelete(item.id)
               }}
+              index={index}
+              setScrolledToDoIndex={setScrolledToDoIndex}
             />
           )}
           keyExtractor={(item) => `todo-${item.id}`}
@@ -171,5 +170,5 @@ const FloatingButtonContainer = styled.View<IFloatingButtonContainer>`
   left: 0;
   background-color: ${(props) => (props.isVisibleMenu ? "rgba(0, 0, 0, 0.5)" : "rgba(0, 0, 0, 0.0)")};
   z-index:${(props) => (props.isVisibleMenu ?  1 : 0)};
-  top:${(props) => (props.isVisibleMenu ? 0 : null)};
+  ${(props) => props.isVisibleMenu && `top: 0;`}
 `;

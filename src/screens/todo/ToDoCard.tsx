@@ -13,13 +13,23 @@ import { ToDoService } from "../../service/ToDoService";
 import { useNavigation } from "@react-navigation/native";
 import { ScreenName } from "../../statics/constants/ScreenName";
 
-  const { width } = Dimensions.get('window');
-  const HIDDEN_MENU_WIDTH = 70;
-  const TIMING_DURATION = 500;
+const { width } = Dimensions.get('window');
+const HIDDEN_MENU_WIDTH = 70;
+const TIMING_DURATION = 500;
 
-const ToDoCard = ({ todo, curTime, onDelete }: { todo: IToDo, curTime: Date, onDelete: () => void}) => {
+const completeStampImage = require(`../../assets/images/2a820159-1f51-473a-a11c-764539054ca0.jpg`);
+
+interface IToDoCardProps {
+    todo: IToDo;
+    curTime: Date;
+    onDelete: () => void;
+    index: number;
+    setScrolledToDoIndex: (index: number) => void;
+}
+const ToDoCard = ({ todo, curTime, onDelete, index, setScrolledToDoIndex }: IToDoCardProps) => {
     //TODO: pet_colors를 어떻게 처리할지 고민해보기
-    const pet_colors = ["#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF", "#FF00FF", "#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF", "#FF00FF", "#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF", "#FF00FF", "#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF", "#FF00FF", "#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF", "#FF00FF", "#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF", "#FF00FF", "#FFD700", "#FF69B4", "#00FF00", "#1E"];
+    // Shorten the pet_colors array
+    const pet_colors = ["#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF"];
     const formatTime = (time: string) => {
         const timeArr = time.split(':');
         const hour = timeArr[0];
@@ -58,9 +68,11 @@ const ToDoCard = ({ todo, curTime, onDelete }: { todo: IToDo, curTime: Date, onD
         .onUpdate(e => {
             xOffset.value =Math.max(-HIDDEN_MENU_WIDTH, Math.min(0, e.translationX)); 
         })
-        .onEnd(e => {
+        .onEnd(() => {
             if (xOffset.value < -HIDDEN_MENU_WIDTH / 2) {
-                xOffset.value = withTiming(-HIDDEN_MENU_WIDTH, { duration: TIMING_DURATION }); 
+                xOffset.value = withTiming(-HIDDEN_MENU_WIDTH, { duration: TIMING_DURATION });
+                setScrolledToDoIndex(index);
+                console.log(index)
             } else {
                 xOffset.value = withTiming(0, { duration: TIMING_DURATION })  // 원래 상태로 복귀
             }}
@@ -107,7 +119,7 @@ const ToDoCard = ({ todo, curTime, onDelete }: { todo: IToDo, curTime: Date, onD
                     <View>
                         {todo.completeProfileImage ? 
                         <View style={styles.profile}>
-                            <Image source={require(`../../assets/images/2a820159-1f51-473a-a11c-764539054ca0.jpg`)} style={{position:'absolute' ,height: 30, width: 30, zIndex: 3}}/>
+                            <Image source={completeStampImage} style={{position:'absolute' ,height: 30, width: 30, zIndex: 3}}/>
                             <Image source={{uri:  `${process.env.IMAGE_BASE_URL}/${todo.completeProfileImage}`}} style={{height: 30, width: 30}}/>
                         </View>
                         :
