@@ -1,4 +1,4 @@
-import { useNavigation } from "@react-navigation/native";
+import { RouteProp, useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, View, Text, Modal } from "react-native";
@@ -25,25 +25,26 @@ import { ToDoService } from "../../service/ToDoService";
 import Toast from "react-native-toast-message";
 import axios from "axios";
 
-const AddTodo = () => {
-  const navigation = useNavigation<StackNavigationProp<RootStackParamList, ScreenName.AddTodo>>();
+type AddToDoRouterProp = RouteProp<RootStackParamList, ScreenName.AddTodo>;
+
+const AddTodo = ({ route }: { route: AddToDoRouterProp }) => {
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList, ScreenName.AddTodo>>();  
   const methods = useForm<IAddTodo>({
     defaultValues: {
       profileId: 1,
       petIds: [],
-      content: null,
+      content: '',
       tag: null,
       date: '',
       time: '',
       isAllDay: false,
-      color: ToDoColors.PURPLE,
-      isUsingAlarm: true,
+      color: ToDoColors.ORANGE,
+      isUsingAlarm: false,
       repeat: null,
     }
   })
 
-  const { control, handleSubmit, setValue, getValues, watch} = methods;
-  
+  const { control, handleSubmit, setValue, getValues, watch} = methods;  
   //펫 정보 불러오기
   const { data: petData } = useQuery({
     queryKey: [QueryKey.PET_LIST],
@@ -55,7 +56,8 @@ const AddTodo = () => {
     name: string;
     isPressed: boolean;
   }
-
+  const [pets, setPets] = useState<IPet[]>([]);
+  
   // 펫 정보에다가 isPressed 추가
   useEffect(() => {
     if (petData?.data?.data) {
@@ -69,9 +71,7 @@ const AddTodo = () => {
     }
   }, [petData]);
 
-  const [pets, setPets] = useState<IPet[]>([]);
   const [date, setDate] = useState<Date>(new Date());
-
   // 현재 날짜와 시간을 형식에 맞춰 date, time 에 넣어주기
   useEffect(() => {
     const year = date.getFullYear();
@@ -81,7 +81,7 @@ const AddTodo = () => {
     const minute = String(date.getMinutes()).padStart(2, '0');
     setValue('date',(`${year}-${month}-${day}`));
     setValue('time',(`${hour}:${minute}`));
-  }, [date, pets]);
+  }, [date]);
   
   // 시간을 오전/오후로 나누어 표시해주는 함수
   const timeStringConverter = (time: string): string => {
@@ -119,6 +119,8 @@ const AddTodo = () => {
   // time picker modal 관련
   const [timePickerMode, setTimePickerMode] = useState<string>('date');
   const [timePickerSelected, setTimePickerSelected] = useState<boolean>(false);
+
+  // tag modal 관련
   const [tagWindowSelected, setTagWindowSelected] = useState<boolean>(false);
   const selectedTag = watch('tag');
   const footerTag = useMemo(() => {
@@ -324,28 +326,35 @@ const AddTodo = () => {
   },[repeat, selectedUnit, intervalValue, weekDays, weekDayList]);
 
   const repeatText = repeat ? `${repeat.interval}${RepeatUnit[repeat.unit].intervalText} ${repeat.weekDays} ` : '';
-  
-  // mutation 관련
 
-  const { mutate, isLoading } = useMutation({
-    mutationFn: (data: IAddTodo) => ToDoService.todo.create(data),
-    onSuccess: () => {
-      Toast.show({
-        type: 'success',
-        text1: '일정이 추가되었습니다',
-      })
-    },
-    onError: (error) => {
-      if(axios.isAxiosError(error)) {
-        if (error.response) {
-          Toast.show({
-            type: 'error',
-            text1: error.response.data.error.message,
-          })
-        }
-      }
-    }
+  const { todo } = route.params;
+  const { isLoading: toDoLoading, data: originToDoData} = useQuery({
+    queryKey: [QueryKey.TODO_ITEM, todo],
+    queryFn: () => todo ? ToDoService.todo.get(todo) : Promise.resolve(null),
+    enabled: !!todo,
   });
+
+  useEffect(() => {
+    if (toDoLoading) {
+      return;
+    }
+    
+    if (originToDoData?.data?.data) {
+      const {color, date, id, intervalNum, isAllDay, isUsingAlarm, pets, time, title, unit, weekDays} = originToDoData.data.data;
+      Object.values(ToDoType).includes(title) ? methods.setValue('tag', title) : methods.setValue('content', title);
+      const petIds = pets.map((pet: { id: number; }) => pet.id);
+      methods.setValue('profileId', 1);
+      methods.setValue('petIds', petIds);
+      methods.setValue('date', date);
+      methods.setValue('time', time);
+      methods.setValue('isAllDay', isAllDay);
+      methods.setValue('color', color);
+      methods.setValue('isUsingAlarm', isUsingAlarm);
+      methods.setValue('repeat', unit ? {unit, interval: intervalNum, weekDays} : null);
+      petIds.forEach((petId: number) => handlePetPress(petId));
+      
+    }
+  },[toDoLoading]) 
 
   const onSubmit = (data: IAddTodo) => {
     var isError = false;
@@ -370,18 +379,61 @@ const AddTodo = () => {
       return;
     }
     
-    console.log(data);
-    mutate(data);
+    todo ? update(data) :mutate(data);
   };
 
-  useEffect(() => {
-  }, [isLoading]);
+  const { mutate, isLoading: createLoading } = useMutation({
+    mutationFn: (data: IAddTodo) => ToDoService.todo.create(data),
+    onSuccess: () => {
+      Toast.show({
+        type: 'success',
+        text1: '일정이 추가되었습니다',
+      })
+    },
+    onError: (error) => {
+      if(axios.isAxiosError(error)) {
+        if (error.response) {
+          Toast.show({
+            type: 'error',
+            text1: error.response.data.error.message,
+          })
+        }
+      }
+    }
+  });
+
+  const { mutate: update, isLoading: updateLoading } = useMutation({
+    mutationFn: (data: IAddTodo) => {
+      if (typeof todo === 'number') {
+        return ToDoService.todo.update(todo, data);
+      }
+      throw new Error('Invalid todo id');
+    },
+    onSuccess: () => {
+      Toast.show({
+        type: 'success',
+        text1: '일정이 수정되었습니다',
+      })
+    },
+    onError: (error) => {
+      if(axios.isAxiosError(error)) {
+        if (error.response) {
+          Toast.show({
+            type: 'error',
+            text1: error.response.data.error.message,
+          })
+        }
+      }
+    }
+  });
+
+  const isLoading = todo ? updateLoading : createLoading;
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <HeaderNavigation
-          middletitle="일정 추가"
+          middletitle={todo ? "일정 수정" :"일정 추가"}
           rightTitle="완료"
           hasBackButton={true}
           onPressBackButton={() => {
@@ -662,7 +714,7 @@ const styles = StyleSheet.create({
     paddingTop: 30,
     paddingBottom: 30,
     width: 480,
-    hegith: 140,
+    height: 140,
   },
   footerRepeatContainer: {
     marginTop: 30,
