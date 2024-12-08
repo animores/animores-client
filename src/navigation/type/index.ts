@@ -1,4 +1,5 @@
 import { IProfile } from "../../../types/Profile";
+import { IToDo } from "../../../types/ToDo";
 import { ScreenName } from "../../statics/constants/ScreenName"
 
 export type RootStackParamList = {
@@ -6,7 +7,7 @@ export type RootStackParamList = {
     [ScreenName.Join]: undefined;
     [ScreenName.JoinCompleted]: undefined;
     [ScreenName.CreateDiary]: undefined;
-    [ScreenName.AddTodo]: undefined;
+    [ScreenName.AddTodo]: { todo?: number };
 	[ScreenName.PatManagement]: undefined;
 	[ScreenName.PetType]: undefined;
 	[ScreenName.BreedType]: undefined;

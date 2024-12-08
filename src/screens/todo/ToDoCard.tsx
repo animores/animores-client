@@ -10,7 +10,8 @@ import Animated, {
   } from 'react-native-reanimated';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ToDoService } from "../../service/ToDoService";
-
+import { useNavigation } from "@react-navigation/native";
+import { ScreenName } from "../../statics/constants/ScreenName";
 
   const { width } = Dimensions.get('window');
   const HIDDEN_MENU_WIDTH = 70;
@@ -79,6 +80,8 @@ const ToDoCard = ({ todo, curTime, onDelete }: { todo: IToDo, curTime: Date, onD
         );
     }
 
+    const navigation = useNavigation();
+
     return (
         <View style={styles.container}>
             <GestureDetector gesture={pan}>
@@ -119,8 +122,8 @@ const ToDoCard = ({ todo, curTime, onDelete }: { todo: IToDo, curTime: Date, onD
                 }>
                     <Text style={styles.hiddenMenuText}>삭제</Text>
                 </Pressable>
-                <Separator/>
-                <Pressable onPress = {() => checkToDo(todo.id)}>
+                <Separator/>  
+                <Pressable onPress={() => navigation.navigate(ScreenName.AddTodo, { todo: todo.id })}>
                     <Text style={styles.hiddenMenuText}>수정</Text>
                 </Pressable>
             </View>

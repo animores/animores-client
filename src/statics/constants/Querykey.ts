@@ -7,4 +7,5 @@ export enum QueryKey {
     ADD_TODO = "ADD_TODO",
     COMMENT_LIST = "COMMENT_LIST",
     TODO_LIST = "TODO_LIST",
+    TODO_ITEM = "TODO_ITEM",
 }

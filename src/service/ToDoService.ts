@@ -1,6 +1,7 @@
 import axios from "axios";
 import {IAddTodo, IListToDoParam} from "../../types/AddToDo";
 import AxiosContext from "../screens/context/AxiosContext";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 export namespace ToDoService {
     export const todo = {
@@ -76,6 +77,32 @@ export namespace ToDoService {
                 if	(axios.isAxiosError(error)) {
                     if (error.response) {
                         console.error('ProfileService.Profile.delete:', error.response.data);
+                    }
+                }
+            }
+        },
+        get: async (id: number) => {
+            try {
+                const response = await AxiosContext.get(`/api/v1/todos/${id}`);
+                return { data: response.data, status: response.status };
+            } catch (error) {
+                console.error('ToDoService.todo.get:', error);
+                if	(axios.isAxiosError(error)) {
+                    if (error.response) {
+                        console.error('ProfileService.Profile.get:', error.response.data);
+                    }
+                }
+            }
+        },
+        update: async (id: number, content: IAddTodo) => {
+            try {
+                const response = await AxiosContext.patch(`/api/v1/todos/${id}`, content);
+                return { data: response.data, status: response.status };
+            } catch (error) {
+                console.error('ToDoService.todo.update:', error);
+                if	(axios.isAxiosError(error)) {
+                    if (error.response) {
+                        console.error('ProfileService.Profile.update:', error.response.data);
                     }
                 }
             }

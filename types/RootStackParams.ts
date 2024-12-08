@@ -1,11 +1,12 @@
 import { IProfile } from "./Profile";
+import { IToDo } from "./ToDo";
 
 export type RootStackParams = {
 	BottomTab: undefined;
 	Login: undefined;
 	Join: undefined;
 	CreateDiary: undefined;
-	AddTodo: undefined;
+	AddTodo: undefined | {todo : IToDo};
 	AlertSetting: undefined;
 	CustomerService: undefined;
 	Information: undefined;
