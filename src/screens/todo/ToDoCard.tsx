@@ -1,6 +1,6 @@
 import { View, Text, Pressable, Image, StyleSheet, Dimensions  } from "react-native";
 import { IToDo } from "../../../types/ToDo";
-import React from "react";
+import React, { memo, useEffect } from "react";
 import { Colors } from "../../styles/Colors";
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
 import Animated, { 
@@ -24,9 +24,10 @@ interface IToDoCardProps {
     curTime: Date;
     onDelete: () => void;
     index: number;
-    setScrolledToDoIndex: (index: number) => void;
+    scrolledToDoIndex: number| null;
+    setScrolledToDoIndex: (index: number| null) => void;
 }
-const ToDoCard = ({ todo, curTime, onDelete, index, setScrolledToDoIndex }: IToDoCardProps) => {
+const ToDoCard = ({ todo, curTime, onDelete, index, scrolledToDoIndex, setScrolledToDoIndex }: IToDoCardProps) => {
     //TODO: pet_colors를 어떻게 처리할지 고민해보기
     // Shorten the pet_colors array
     const pet_colors = ["#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF"];
@@ -60,6 +61,8 @@ const ToDoCard = ({ todo, curTime, onDelete, index, setScrolledToDoIndex }: IToD
         ToDoService.todo.check(id);
     }
 
+    const isActive = scrolledToDoIndex === index;
+
   // xOffset은 카드의 X 좌표 위치
     const xOffset = useSharedValue(0);
 
@@ -71,10 +74,13 @@ const ToDoCard = ({ todo, curTime, onDelete, index, setScrolledToDoIndex }: IToD
         .onEnd(() => {
             if (xOffset.value < -HIDDEN_MENU_WIDTH / 2) {
                 xOffset.value = withTiming(-HIDDEN_MENU_WIDTH, { duration: TIMING_DURATION });
-                setScrolledToDoIndex(index);
-                console.log(index)
+                // setScrolledToDoIndex(index);
+                // console.log(index)
             } else {
                 xOffset.value = withTiming(0, { duration: TIMING_DURATION })  // 원래 상태로 복귀
+                // if(isActive) {
+                    // setScrolledToDoIndex(null);
+                // }
             }}
         );
 
@@ -85,12 +91,11 @@ const ToDoCard = ({ todo, curTime, onDelete, index, setScrolledToDoIndex }: IToD
         };
     });
 
-
-    const Separator = () => {
-        return (
-            <View style={{width: 24, height: 1, backgroundColor: Colors.White, marginVertical: 15}}/>
-        );
-    }
+    useEffect(() => {
+        if(!isActive) {
+            xOffset.value = withTiming(0, { duration: TIMING_DURATION });
+        }
+    },[isActive]);
 
     const navigation = useNavigation();
 
@@ -135,13 +140,19 @@ const ToDoCard = ({ todo, curTime, onDelete, index, setScrolledToDoIndex }: IToD
                     <Text style={styles.hiddenMenuText}>삭제</Text>
                 </Pressable>
                 <Separator/>  
-                <Pressable onPress={() => navigation.navigate(ScreenName.AddTodo, { todo: todo.id })}>
+                <Pressable onPress={() => navigation.navigate(ScreenName.AddTodo as never )}>
                     <Text style={styles.hiddenMenuText}>수정</Text>
                 </Pressable>
             </View>
         </View>
     );
 };
+
+const Separator = memo(() => {
+    return (
+        <View style={{width: 24, height: 1, backgroundColor: Colors.White, marginVertical: 15}}/>
+    );
+});
 
 const styles = StyleSheet.create({
     container: {

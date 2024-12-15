@@ -1,6 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { RootStackParamList } from "../../navigation/type";
 import { ScreenName } from "../../statics/constants/ScreenName";
@@ -23,14 +23,6 @@ import styled from "styled-components/native";
 import CenterModal from "../../components/modal/CenterModal";
 
 const AllTodoScreen = () => {
-  const [scrolledToDoIndex, setScrolledToDoIndex] = useState<number | null>(null);
-  const [queryParam, setQueryParam] = useState<IListToDoParam>({
-    done: null,
-    pets: null,
-    page: 1,
-    size: 15,
-  });
-
   const [petList, setPetList] = useRecoilState<IPetTypes[]>(PetListAtom);
   useEffect(() => {
     if (petList.length === 0) {
@@ -42,6 +34,14 @@ const AllTodoScreen = () => {
 
   const [usePetListWindow, setUsePetListWindow] = useState<boolean>(false);
   const [clickedPetIds, setClickedPetIds] = useState<number[]>([]);
+
+  const [queryParam, setQueryParam] = useState<IListToDoParam>({
+    done: null,
+    pets: null,
+    page: 1,
+    size: 15,
+  });
+
   useEffect(() => {
     setQueryParam({
       ...queryParam,
@@ -49,7 +49,7 @@ const AllTodoScreen = () => {
     });
   }, [clickedPetIds]);
 
-  const PetListButton = () => {
+  const PetListButton = useCallback(() => {
     var petListString =
       queryParam.pets == undefined
         ? "전체"
@@ -73,15 +73,7 @@ const AllTodoScreen = () => {
         </Text>
       </Pressable>
     );
-  };
-
-  interface IToDoListResponse {
-    curPage: number;
-    size: number;
-    totalPage: number;
-    totalCount: number;
-    toDoList: IToDo[];
-  }
+  }, [queryParam.pets]);
 
   const { isLoading, data: toDoData } = useQuery({
     queryKey: [QueryKey.TODO_LIST, queryParam],
@@ -95,16 +87,20 @@ const AllTodoScreen = () => {
   }, [toDoData]);
 
   const [time, setTime] = useState(new Date());
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTime(new Date());
-    }, 60000);
-    return () => clearInterval(interval);
-  }
-  , []);
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     setTime(new Date());
+  //   }, 60000);
+  //   return () => clearInterval(interval);
+  // }
+  // , []);
 
   const [isVisibleMenu, setIsVisibleMenu] = useState<boolean>(false); //플로팅버튼
   const [todoIdToDelete, setTodoIdToDelete] = useState<number | null>(null); //삭제할 todo id
+
+  // todo 스크롤시 인덱스
+  const [scrolledToDoIndex, setScrolledToDoIndex] = useState<number | null>(null);
+
   return (
     <>
       <HeaderNavigation  middletitle={<PetListButton />} hasBackButton={false} />
@@ -114,12 +110,14 @@ const AllTodoScreen = () => {
           data={toDoList}
           renderItem={({ item, index }) => (
             <ToDoCard
+              key={item.id}
               todo={item}
               curTime={time}
               onDelete={() => {
                 setTodoIdToDelete(item.id)
               }}
               index={index}
+              scrolledToDoIndex={scrolledToDoIndex}
               setScrolledToDoIndex={setScrolledToDoIndex}
             />
           )}
@@ -161,6 +159,14 @@ export default AllTodoScreen;
 
 interface IFloatingButtonContainer {
   isVisibleMenu: boolean;
+}
+
+interface IToDoListResponse {
+  curPage: number;
+  size: number;
+  totalPage: number;
+  totalCount: number;
+  toDoList: IToDo[];
 }
 
 const FloatingButtonContainer = styled.View<IFloatingButtonContainer>`
