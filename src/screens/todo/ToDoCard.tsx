@@ -1,21 +1,14 @@
 import { View, Text, Pressable, Image, StyleSheet, Dimensions  } from "react-native";
 import { IToDo } from "../../../types/ToDo";
-import React, { memo, useEffect } from "react";
+import React, { memo } from "react";
 import { Colors } from "../../styles/Colors";
-import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, { 
-    useAnimatedStyle, 
-    useSharedValue, 
-    withTiming  
-  } from 'react-native-reanimated';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { ToDoService } from "../../service/ToDoService";
 import { useNavigation } from "@react-navigation/native";
 import { ScreenName } from "../../statics/constants/ScreenName";
 
 const { width } = Dimensions.get('window');
-const HIDDEN_MENU_WIDTH = 70;
-const TIMING_DURATION = 500;
+
 
 const completeStampImage = require(`../../assets/images/2a820159-1f51-473a-a11c-764539054ca0.jpg`);
 
@@ -23,11 +16,10 @@ interface IToDoCardProps {
     todo: IToDo;
     curTime: Date;
     onDelete: () => void;
-    index: number;
-    scrolledToDoIndex: number| null;
-    setScrolledToDoIndex: (index: number| null) => void;
 }
-const ToDoCard = ({ todo, curTime, onDelete, index, scrolledToDoIndex, setScrolledToDoIndex }: IToDoCardProps) => {
+const ToDoCard = ({ todo, curTime, onDelete }: IToDoCardProps) => {
+
+    const navigation = useNavigation();
     //TODO: pet_colors를 어떻게 처리할지 고민해보기
     // Shorten the pet_colors array
     const pet_colors = ["#FFD700", "#FF69B4", "#00FF00", "#1E90FF", "#FF4500", "#FF6347", "#8A2BE2", "#FF1493", "#FF8C00", "#FF00FF", "#00FFFF", "#00FF7F", "#FF0000", "#0000FF"];
@@ -61,78 +53,45 @@ const ToDoCard = ({ todo, curTime, onDelete, index, scrolledToDoIndex, setScroll
         ToDoService.todo.check(id);
     }
 
-    const isActive = scrolledToDoIndex === index;
 
-  // xOffset은 카드의 X 좌표 위치
-    const xOffset = useSharedValue(0);
-
-    // 슬라이드 제스처 핸들러
-    const pan = Gesture.Pan()
-        .onUpdate(e => {
-            xOffset.value =Math.max(-HIDDEN_MENU_WIDTH, Math.min(0, e.translationX)); 
-        })
-        .onEnd(() => {
-            if (xOffset.value < -HIDDEN_MENU_WIDTH / 2) {
-                xOffset.value = withTiming(-HIDDEN_MENU_WIDTH, { duration: TIMING_DURATION });
-                // setScrolledToDoIndex(index);
-                // console.log(index)
-            } else {
-                xOffset.value = withTiming(0, { duration: TIMING_DURATION })  // 원래 상태로 복귀
-                // if(isActive) {
-                    // setScrolledToDoIndex(null);
-                // }
-            }}
+    const Separator = () => {
+        return (
+            <View style={{width: 24, height: 1, backgroundColor: Colors.White, marginVertical: 15}}/>
         );
-
-    // 애니메이션 스타일
-    const animatedStyle = useAnimatedStyle(() => {
-        return {
-        transform: [{ translateX: xOffset.value }],
-        };
-    });
-
-    useEffect(() => {
-        if(!isActive) {
-            xOffset.value = withTiming(0, { duration: TIMING_DURATION });
-        }
-    },[isActive]);
-
-    const navigation = useNavigation();
+    }
 
     return (
-        <View style={styles.container}>
-            <GestureDetector gesture={pan}>
-                <Animated.View style={[styles.card, animatedStyle]}>
-                    <View>
-                        <View style={{flexDirection: "row"}}>
-                            <FontAwesome name="clock-o" size={24} color="black" />
-                            <Text style={{fontSize: 25, color: isPast(curTime, todo.time) ? "red" : "black", marginHorizontal: 10}}>{formatTime(todo.time)}</Text>
+        <View style={styles.container}>            
+            <View style={[styles.card]}>
+                <View>
+                    <View style={{flexDirection: "row"}}>
+                        <FontAwesome name="clock-o" size={24} color="black" />
+                        <Text style={{fontSize: 25, color: isPast(curTime, todo.time) ? "red" : "black", marginHorizontal: 10}}>{formatTime(todo.time)}</Text>
+                    </View>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <View style={{flexDirection:'row', marginVertical: 10}}>
+                            {todo.pets.map((pet) => {
+                                return <View style={{...styles.pet_cell, flexDirection: 'row', justifyContent: 'center', alignItems: 'center',backgroundColor: pet_colors.at(pet.id % pet_colors.length)}}>
+                                            <Text>{pet.name}</Text>
+                                        </View>
+                            })}
                         </View>
-                        <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                            <View style={{flexDirection:'row', marginVertical: 10}}>
-                                {todo.pets.map((pet) => {
-                                    return <View style={{...styles.pet_cell, flexDirection: 'row', justifyContent: 'center', alignItems: 'center',backgroundColor: pet_colors.at(pet.id % pet_colors.length)}}>
-                                                <Text>{pet.name}</Text>
-                                            </View>
-                                })}
-                            </View>
-                            <View style={{height: 20, marginVertical: 10}}>
-                                <Text style={{fontSize: 15}}>{todo.title}</Text>
-                            </View>
+                        <View style={{height: 20, marginVertical: 10}}>
+                            <Text style={{fontSize: 15}}>{todo.title}</Text>
                         </View>
                     </View>
-                    <View>
-                        {todo.completeProfileImage ? 
-                        <View style={styles.profile}>
-                            <Image source={completeStampImage} style={{position:'absolute' ,height: 30, width: 30, zIndex: 3}}/>
-                            <Image source={{uri:  `${process.env.IMAGE_BASE_URL}/${todo.completeProfileImage}`}} style={{height: 30, width: 30}}/>
-                        </View>
-                        :
-                        <Pressable onPress={() => checkToDo(todo.id)} style={{...styles.profile, ...styles.check_box}}/>
-                        }
+                </View>
+                <View>
+                    {todo.completeProfileImage ? 
+                    <View style={styles.profile}>
+                        <Image source={require(`../../assets/images/2a820159-1f51-473a-a11c-764539054ca0.jpg`)} style={{position:'absolute' ,height: 30, width: 30, zIndex: 3}}/>
+                        <Image source={{uri:  `${process.env.IMAGE_BASE_URL}/${todo.completeProfileImage}`}} style={{height: 30, width: 30}}/>
                     </View>
-                </Animated.View>
-            </GestureDetector>
+                    :
+                    <Pressable onPress={() => checkToDo(todo.id)} style={{...styles.profile, ...styles.check_box}}/>
+                    }
+                </View>
+            </View>
             <View style={styles.hidden_card}>
                 <Pressable onPress = {() => 
                     onDelete()

@@ -12,7 +12,7 @@ import HeaderNavigation from "../../navigation/HeaderNavigation";
 import { PetService } from "../../service/PetService";
 import { useRecoilState } from "recoil";
 
-import { FlatList, ScrollView } from "react-native-gesture-handler";
+import { FlatList } from "react-native-gesture-handler";
 import { IToDo } from "../../../types/ToDo";
 import { IPetTypes } from "../../../types/PetTypes";
 import { PetListAtom } from "../../recoil/PetAtom";
@@ -21,6 +21,23 @@ import ToDoCard from "./ToDoCard";
 import FloatingButton from "../../components/button/FloatingButton";
 import styled from "styled-components/native";
 import CenterModal from "../../components/modal/CenterModal";
+
+import { GestureDetector, Gesture } from 'react-native-gesture-handler';
+import Animated, { 
+    useSharedValue, 
+    withSpring,  
+  } from 'react-native-reanimated';
+
+interface IToDoListResponse {
+  curPage: number;
+  size: number;
+  totalPage: number;
+  totalCount: number;
+  toDoList: IToDo[];
+}
+
+const HIDDEN_MENU_WIDTH = 70;
+const TIMING_DURATION = 500;
 
 const AllTodoScreen = () => {
   const [petList, setPetList] = useRecoilState<IPetTypes[]>(PetListAtom);
@@ -82,8 +99,13 @@ const AllTodoScreen = () => {
 
   const pageResonse: IToDoListResponse = toDoData?.data;
   const [toDoList, setToDoList] = useState<IToDo[]>([]);
+  const [gestures, setGestures] = useState<{ [key: number]: any }>({});
   useEffect(() => {
     setToDoList(pageResonse?.toDoList || []);
+    setGestures(pageResonse?.toDoList.reduce((acc, item) => {
+      acc[item.id] = useSharedValue(0);
+      return acc;
+    }, {} as { [key: number]: any }));
   }, [toDoData]);
 
   const [time, setTime] = useState(new Date());
@@ -97,9 +119,40 @@ const AllTodoScreen = () => {
 
   const [isVisibleMenu, setIsVisibleMenu] = useState<boolean>(false); //플로팅버튼
   const [todoIdToDelete, setTodoIdToDelete] = useState<number | null>(null); //삭제할 todo id
-
-  // todo 스크롤시 인덱스
-  const [scrolledToDoIndex, setScrolledToDoIndex] = useState<number | null>(null);
+  
+  const resetAllGestures = (exceptId: number) => {
+    Object.keys(gestures).forEach((key) => {
+      if (parseInt(key) !== exceptId) {
+        gestures[parseInt(key)].value = withSpring(0);
+      }
+    });
+  };
+  
+  const handleGestureEvent = (id: number) => Gesture.Pan()
+  .onUpdate((event) => {
+    gestures[id].value = event.translationX;
+  })
+  .onEnd((event) => {
+    const { translationX } = event;
+    if (Math.abs(translationX) > 20) {
+      resetAllGestures(id);
+    }
+    if (translationX > 50) {
+      animateSwipe(id, 0);
+    } else if (translationX < -50) {
+      animateSwipe(id, -80);
+    } else {
+      resetPosition(id);
+    }
+  });
+  
+  const animateSwipe = (id: number, toValue: number) => {
+    gestures[id].value = withSpring(toValue);
+  };
+  
+  const resetPosition = (id: number) => {
+    gestures[id].value = withSpring(0);
+  };
 
   return (
     <>
@@ -108,18 +161,18 @@ const AllTodoScreen = () => {
         {isLoading ? <Text>Loading...</Text> : toDoList.length === 0 && <Text>할 일이 없습니다.</Text>}
         <FlatList
           data={toDoList}
-          renderItem={({ item, index }) => (
-            <ToDoCard
-              key={item.id}
-              todo={item}
-              curTime={time}
-              onDelete={() => {
-                setTodoIdToDelete(item.id)
-              }}
-              index={index}
-              scrolledToDoIndex={scrolledToDoIndex}
-              setScrolledToDoIndex={setScrolledToDoIndex}
-            />
+          renderItem={({ item }) => (
+            <GestureDetector key={item.id} gesture={handleGestureEvent(item.id)}>
+              <Animated.View style={{transform: [{translateX: gestures[item.id].value}]}}>
+                <ToDoCard
+                  todo={item}
+                  curTime={time}
+                  onDelete={() => {
+                    setTodoIdToDelete(item.id)
+                  }}
+                />
+              </Animated.View>
+            </GestureDetector>
           )}
           keyExtractor={(item) => `todo-${item.id}`}
         />
