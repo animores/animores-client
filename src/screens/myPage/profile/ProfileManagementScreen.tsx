@@ -21,7 +21,8 @@ import { AuthModel } from "../../../model/AuthModel";
 import axios from "axios";
 
 const ProfileManagementScreen = () => {
-  const baseUrl = "https://animores-image.s3.ap-northeast-2.amazonaws.com";
+  const baseURL = process.env.EXPO_PUBLIC_BASE_URL;
+  const imageBaseURL = "https://animores-image.s3.ap-northeast-2.amazonaws.com";
 
   const navigation =
     useNavigation<
@@ -46,8 +47,8 @@ const ProfileManagementScreen = () => {
     queryFn: () => ProfileService.profile.list(),
   });
 
-  const myProfile = myProfileInfo?.data.data;
-  const profiles = Object.values(profileList?.data.data) || [];
+  const myProfile = myProfileInfo?.data?.data;
+  const profiles = Object.values(profileList?.data?.data) || [];
 
   if (profiles.length < 6) {
     profiles.push({
@@ -74,14 +75,11 @@ const ProfileManagementScreen = () => {
 
   // Nickname - 중복확인 클릭 시
   const checkNickname = async (nickname: string) => {
-    console.log(baseUrl);
     // 중복이면 
-    await axios.get(`${baseUrl}/api/v1/account/check-nickname/${nickname}`)
+    await axios.get(`${baseURL}/api/v1/account/check-nickname/${nickname}`)
     .then((response) => {
       if (!response.data.data){
         setNicknameState('success');
-
-        // 카운트 시작 3:00
       } else {
         // 중복일 경우
         setNicknameState('fail');
@@ -249,7 +247,7 @@ const ProfileManagementScreen = () => {
                       source={
                         item.id === "add"
                           ? asset.petAdd
-                          : { uri: `${baseUrl}/${item.imageUrl}` }
+                          : { uri: `${imageBaseURL}/${item.imageUrl}` }
                       }
                       style={styles.profileImage}
                     />

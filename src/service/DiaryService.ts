@@ -58,5 +58,17 @@ export namespace DiaryService {
 				return { data: null, status: error || 500 };
 			}
 		},
+		addComment: async (profileId:number, diaryId: number, content: string) => {
+      		//console.log('들어옴', content);
+
+			try {
+				const response = await AxiosContext.post(`/api/v1/diary-comments`, {profileId, diaryId, content});
+				console.log('response', response)
+				return { data: response.data, status: response.status };
+			} catch (error) {
+				console.error('DiaryService.diary.addComment:', error);
+				return { data: null, status: error || 500 };
+			}
+		}
 	}
 }

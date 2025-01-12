@@ -98,7 +98,7 @@ const MypageScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         <HeaderNavigation
           middletitle="마이페이지"
-          hasBackButton={true}
+          hasBackButton={false}
           onPressBackButton={() => {
             navigation.goBack();
           }}

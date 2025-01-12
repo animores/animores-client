@@ -2,16 +2,16 @@ import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
-  useQuery,
 } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import "dayjs/locale/ko";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import React, { useState, useEffect } from "react";
-import { FlatList, Pressable, StyleSheet, View, Image } from "react-native";
+import React, { useState } from "react";
+import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { CommentIcon, More, User, UserImage, ProfileImage as DefaultProfileImage } from "../../assets/svg";
+import { CommentIcon, More, UserImage } from "../../assets/svg";
 import FloatingButton from "../../components/button/FloatingButton";
 import BottomModal from "../../components/modal/BottomModal";
 import Title from "../../components/text/Title";
@@ -21,9 +21,7 @@ import { DiaryService } from "../../service/DiaryService";
 import { QueryKey } from "../../statics/constants/Querykey";
 import { Colors } from "../../styles/Colors";
 import CenterModal from "../../components/modal/CenterModal";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Control, useForm } from "react-hook-form";
-import InputBox from "../../components/Input/InputBox";
+import Test from "./Test";
 
 dayjs.locale("ko");
 dayjs.extend(utc);
@@ -41,16 +39,12 @@ const DairyScreen = () => {
   const [isSecondVisibleMore, setIsSecondVisibleMore] = useState<boolean>(false);
   const [isVisibleMenu, setIsVisibleMenu] = useState<boolean>(false); //플로팅버튼
   const [isVisibleComment, setIsVisibleComment] = useState<boolean>(false); //댓글 모달
-  const [isComment, setIsComment] = useState<boolean>(false); //댓글수
+  const [isComment, setIsComment] = useState<boolean>(false); //댓글 유무
   const [commentDiaryId, setCommentDiaryId] = useState<number | null>(null);  //댓글 diary Id
   const [commentProfileId, setCommentProfileId] = useState<number | null>(null);  //댓글 profile Id
   const [deletedDiaryId, setDeletedDiaryId] = useState<number | null>(null);  //삭제 diary Id
   const [deletedProfileId, setDeletedProfileId] = useState<number | null>(null);  //삭제 profile Id
   
-  const [inputText, setInputText] = useState<boolean>(false);
-
-  const { control, handleSubmit, formState: { errors, isValid } } = useForm({ mode: "onChange" });
- 
   //일지 리스트
   //TODO: profile api 가져와서 profileId에 넣기
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
@@ -106,26 +100,6 @@ const DairyScreen = () => {
       setExpandedItems([...expandedItems, itemId]);
     }
   };
-
-  //(댓글 클릭 시) 댓글 불러오기
-  const { data: commentList } = useQuery({
-    queryKey: [QueryKey.COMMENT_LIST, commentDiaryId],
-    queryFn: () => DiaryService.diary.commentList(commentDiaryId, commentProfileId, 1, 15),
-    option: {
-      enabled: !!commentDiaryId,
-    }
-    
-  });
-
-  const comments = commentList?.data?.comments || [];
-
-  const onsubmit = (data: AuthModel.ILoginModel) => {
-    console.log('댓글 생성');
-  };
-
-  useEffect(() => {
-    //console.log(comments);
-  }, [commentDiaryId])
 
   const renderItem = ({
     item,
@@ -251,100 +225,6 @@ const DairyScreen = () => {
     }
   };
 
-  //댓글 모달 footer
-  const footerComment = (): React.ReactNode => {
-
-    return (
-      <View style={styles.bottomModalContainer}>
-        <View style={styles.footerTopLine} />
-
-        <Title
-          text={"댓글"}
-          fontSize={16}
-          style={{ textAlign: "center", marginTop: 10 }}
-        />
-        {isComment ? (
-          comments.map((item) => {
-            return (
-              <View style={styles.commentContainer}>
-                {item.imageUrl !== null ? (
-                  <Image
-                      source={{ uri: `${baseUrl}/${item.imageUrl}` }}
-                      style={styles.profileImage}
-                  />
-                ) : (
-                  <User />
-                )}
-                <View style={styles.comment}>
-                  <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-                    <Title
-                      text={"3분 전"}
-                      fontSize={12}
-                      color={Colors.AEAEAE}
-                      style={{ marginLeft: 12 }}
-                    />
-                  </View>
-                  <Title
-                    text={item.content}
-                    fontSize={14}
-                    style={{ marginTop: 8 }}
-                  />
-                </View>
-                <Title
-                  text={"답글 달기"}
-                  fontSize={14}
-                  color={Colors.AEAEAE}
-                  style={{ marginLeft: 12, alignSelf: "flex-end" }}
-                />
-              </View>
-            )
-          })
-        ) : (          
-          <View style={styles.commentContainer}>
-            <Title
-              text={"댓글이 없습니다."}
-              fontSize={14}
-              style={{ paddingVertical: 10 }}
-            />
-          </View>
-        )}
-
-        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 10, paddingVertical: 10 }}>
-          <InputBox
-            name={"comment"}
-            placeholder="댓글을 입력해주세요"
-            control={control}
-            onChange={isValid ? setInputText(true) : setInputText(false)}
-            style={{ width: "77%", marginRight: "3%" }}
-          />
-          {isValid ? (
-            <Pressable
-              onPress={() => console.log('입력')}
-              style={[styles.submitButton, { width: "20%" }]}
-              disabled={false}
-            >
-              <Title 
-                text="입력" 
-                color={Colors.White} 
-              />
-            </Pressable>
-          ) : (
-            <Pressable
-              onPress={() => console.log('입력')}
-              style={[styles.submitButtonDisabled, { width: "20%" }]}
-              disabled={true}
-            >
-              <Title 
-                text="입력" 
-                color={Colors.White} 
-              />
-            </Pressable>
-          )}
-        </View>
-      </View>
-    );
-  };
-
   const loadMoreData = () => {
     if (!hasNextPage || isFetchingNextPage) return;
     fetchNextPage();
@@ -360,55 +240,65 @@ const DairyScreen = () => {
 
   return (
     <>
-      <HeaderNavigation middletitle="일지" hasBackButton={false} />
-      <FlatList
-        keyExtractor={(item, index) => `diary-${item?.diaryId}-${index}`}
-        data={diaryData}
-        renderItem={renderItem}
-        onEndReachedThreshold={0.6}
-        onEndReached={loadMoreData}
-      />
-      {/* 플로팅 버튼 */}
-      <View
-        style={[
-          styles.floatingButtonContainer,
-          {
-            backgroundColor: isVisibleMenu
-              ? "rgba(0, 0, 0, 0.5)"
-              : "transparent",
-            zIndex: isVisibleMenu ? 1 : 0,
-            top: isVisibleMenu ? 0 : null,
-          },
-        ]}
-      >
-        <FloatingButton
-          isVisibleMenu={isVisibleMenu}
-          onPressCancel={() => setIsVisibleMenu(false)}
-          onPressFloating={() => setIsVisibleMenu(!isVisibleMenu)}
+      <SafeAreaView style={styles.container}>
+        <HeaderNavigation middletitle="일지" hasBackButton={false} />
+        <FlatList
+          keyExtractor={(item, index) => `diary-${item?.diaryId}-${index}`}
+          data={diaryData}
+          renderItem={renderItem}
+          onEndReachedThreshold={0.6}
+          onEndReached={loadMoreData}
         />
-        {/* 모달 */}
-        <BottomModal
-          isVisible={isFirstVisibleMore}
-          onClose={() => {
-            setIsFirstVisibleMore(false);
-          }}
-          footer={footerMore}
+        {/* 플로팅 버튼 */}
+        <View
+          style={[
+            styles.floatingButtonContainer,
+            {
+              backgroundColor: isVisibleMenu
+                ? "rgba(0, 0, 0, 0.5)"
+                : "transparent",
+              zIndex: isVisibleMenu ? 1 : 0,
+              top: isVisibleMenu ? 0 : null,
+            },
+          ]}
+        >
+          <FloatingButton
+            isVisibleMenu={isVisibleMenu}
+            onPressCancel={() => setIsVisibleMenu(false)}
+            onPressFloating={() => setIsVisibleMenu(!isVisibleMenu)}
+          />
 
-          // 중첩 모달
-          _isVisible={isSecondVisibleMore}
-          _onClose={() => setIsSecondVisibleMore(false)}
-          _title="게시물을 삭제하시겠어요?"
-          _subTitle="삭제 이후에는 게시물이 영구적으로 삭제되며, 복원하실 수 없습니다."
-          _onDelete={handleDelete}
-        />
-        <BottomModal
-          isVisible={isVisibleComment}
-          onClose={() => {
-            setIsVisibleComment(false);
-          }}
-          footer={footerComment}
-        />
-      </View>
+          {/* 수정/삭제 모달 */}
+          <BottomModal
+            isVisible={isFirstVisibleMore}
+            onClose={() => {
+              setIsFirstVisibleMore(false);
+            }}
+            footer={footerMore}
+
+            // 중첩 모달
+            _isVisible={isSecondVisibleMore}
+            _onClose={() => setIsSecondVisibleMore(false)}
+            _title="게시물을 삭제하시겠어요?"
+            _subTitle="삭제 이후에는 게시물이 영구적으로 삭제되며, 복원하실 수 없습니다."
+            _onDelete={handleDelete}
+          />
+
+          {/* 댓글 모달 */}
+          {/* <AddComment 
+            //visible={isVisibleComment} 
+            //onClose={() => setIsVisibleComment(false)}
+            commentDiaryId={commentDiaryId}
+            isComment={isComment}
+            commentProfileId={commentProfileId}
+          /> */}
+          <Test
+            commentDiaryId={commentDiaryId}
+            isComment={isComment}
+            commentProfileId={commentProfileId} 
+          />
+        </View>
+      </SafeAreaView>
     </>
   );
 };
@@ -416,6 +306,10 @@ const DairyScreen = () => {
 export default DairyScreen;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.White,
+  },
   renderItemContainer: {
     flex: 1,
     paddingTop: 20,
@@ -513,25 +407,5 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     left: 0,
-  },
-  submitButton: {
-    height: 45,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 15,
-    backgroundColor: Colors.FB3F7E,
-  },
-  submitButtonDisabled: {
-    height: 45,
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 15,
-    backgroundColor: Colors.AEAEAE,
-  },
-  profileImage: {
-      alignSelf: "center",
-      width: 50,
-      height: 50,
-      borderRadius: 50
   },
 });

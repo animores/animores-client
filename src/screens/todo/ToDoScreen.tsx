@@ -14,7 +14,7 @@ import { useRecoilState } from "recoil";
 
 import { FlatList } from "react-native-gesture-handler";
 import { IToDo } from "../../../types/ToDo";
-import { IPetTypes } from "../../../types/PetTypes";
+import { IPetType } from "../../../types/PetTypes";
 import { PetListAtom } from "../../recoil/PetAtom";
 import PetListModal from "./modal/PetListModal";
 import ToDoCard from "./ToDoCard";
@@ -40,7 +40,18 @@ const HIDDEN_MENU_WIDTH = 70;
 const TIMING_DURATION = 500;
 
 const AllTodoScreen = () => {
-  const [petList, setPetList] = useRecoilState<IPetTypes[]>(PetListAtom);
+  const navigation =
+    useNavigation<
+      StackNavigationProp<RootStackParamList, ScreenName.ToDoList>
+    >();
+  const [queryParam, setQueryParam] = useState<IListToDoParam>({
+    done: null,
+    pets: null,
+    page: 1,
+    size: 15,
+  });
+
+  const [petList, setPetList] = useRecoilState<IPetType[]>(PetListAtom);
   useEffect(() => {
     if (petList.length === 0) {
       PetService.pet.list().then((response) => {
@@ -51,14 +62,6 @@ const AllTodoScreen = () => {
 
   const [usePetListWindow, setUsePetListWindow] = useState<boolean>(false);
   const [clickedPetIds, setClickedPetIds] = useState<number[]>([]);
-
-  const [queryParam, setQueryParam] = useState<IListToDoParam>({
-    done: null,
-    pets: null,
-    page: 1,
-    size: 15,
-  });
-
   useEffect(() => {
     setQueryParam({
       ...queryParam,

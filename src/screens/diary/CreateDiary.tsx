@@ -98,7 +98,7 @@ const CreatDiary = () => {
       const profileId = parsedProfile.id
 
       const content = methods.getValues('diary');
-console.log('content', content)
+      console.log('content', content);
       mutate({ profileId, content });
     } else {
       console.error("Profile not found in AsyncStorage");

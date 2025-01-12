@@ -8,4 +8,6 @@ export enum QueryKey {
     COMMENT_LIST = "COMMENT_LIST",
     TODO_LIST = "TODO_LIST",
     TODO_ITEM = "TODO_ITEM",
+    PET_SPECIES = "PET_SPECIES",
+    BREED_LIST = "BREED_LIST",
 }

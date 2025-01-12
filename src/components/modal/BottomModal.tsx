@@ -107,16 +107,16 @@ const BottomModal: React.FunctionComponent<IProps> = (props: IProps) => {
 export default BottomModal;
 
 const styles = StyleSheet.create({
+  modalStyle: {
+    width: "100%",
+    margin: "auto",
+    justifyContent: "flex-end"
+  },
   modalContainer: {
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     backgroundColor: Colors.White,
     paddingBottom: 30,
-  },
-  modalStyle: {
-    width: "100%",
-    margin: "auto",
-    justifyContent: "flex-end"
   },
   basicTitle: {
     textAlign: "center",
@@ -125,13 +125,6 @@ const styles = StyleSheet.create({
   },
 
   // 중첩 모달
-  // innerModalOverlay: {
-  //   flex: 1,
-  //   justifyContent: "center",
-  //   alignItems: "center",
-  //   backgroundColor: "rgba(0, 0, 0, 0.5)",
-  //   paddingHorizontal: 20,
-  // },
   innerModalContainer: {
     paddingTop: 44,
     paddingBottom: 17,
