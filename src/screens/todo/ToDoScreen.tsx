@@ -23,10 +23,10 @@ import styled from "styled-components/native";
 import CenterModal from "../../components/modal/CenterModal";
 
 import { GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, { 
-    useSharedValue, 
-    withSpring,  
-  } from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 
 interface IToDoListResponse {
   curPage: number;
@@ -71,8 +71,8 @@ const AllTodoScreen = () => {
       queryParam.pets == undefined
         ? "전체"
         : queryParam.pets
-            .map((pet) => petList.find((petType) => petType.id === pet)?.name)
-            .join(", ");
+          .map((pet) => petList.find((petType) => petType.id === pet)?.name)
+          .join(", ");
 
     if (petListString.length > 10 && queryParam.pets !== null && queryParam.pets.length > 1) {
       const firstPet = petList.find((pet) => queryParam.pets && pet.id === queryParam.pets[0]);
@@ -119,7 +119,7 @@ const AllTodoScreen = () => {
 
   const [isVisibleMenu, setIsVisibleMenu] = useState<boolean>(false); //플로팅버튼
   const [todoIdToDelete, setTodoIdToDelete] = useState<number | null>(null); //삭제할 todo id
-  
+
   const resetAllGestures = (exceptId: number) => {
     Object.keys(gestures).forEach((key) => {
       if (parseInt(key) !== exceptId) {
@@ -127,43 +127,43 @@ const AllTodoScreen = () => {
       }
     });
   };
-  
+
   const handleGestureEvent = (id: number) => Gesture.Pan()
-  .onUpdate((event) => {
-    gestures[id].value = event.translationX;
-  })
-  .onEnd((event) => {
-    const { translationX } = event;
-    if (Math.abs(translationX) > 20) {
-      resetAllGestures(id);
-    }
-    if (translationX > 50) {
-      animateSwipe(id, 0);
-    } else if (translationX < -50) {
-      animateSwipe(id, -80);
-    } else {
-      resetPosition(id);
-    }
-  });
-  
+    .onUpdate((event) => {
+      gestures[id].value = event.translationX;
+    })
+    .onEnd((event) => {
+      const { translationX } = event;
+      if (Math.abs(translationX) > 20) {
+        resetAllGestures(id);
+      }
+      if (translationX > 50) {
+        animateSwipe(id, 0);
+      } else if (translationX < -50) {
+        animateSwipe(id, -80);
+      } else {
+        resetPosition(id);
+      }
+    });
+
   const animateSwipe = (id: number, toValue: number) => {
     gestures[id].value = withSpring(toValue);
   };
-  
+
   const resetPosition = (id: number) => {
     gestures[id].value = withSpring(0);
   };
 
   return (
     <>
-      <HeaderNavigation  middletitle={<PetListButton />} hasBackButton={false} />
-      <View style={{display: 'flex', alignItems: 'center'}}>
+      <HeaderNavigation middletitle={<PetListButton />} hasBackButton={false} />
+      <View style={{ display: 'flex', alignItems: 'center' }}>
         {isLoading ? <Text>Loading...</Text> : toDoList.length === 0 && <Text>할 일이 없습니다.</Text>}
         <FlatList
           data={toDoList}
           renderItem={({ item }) => (
             <GestureDetector key={item.id} gesture={handleGestureEvent(item.id)}>
-              <Animated.View style={{transform: [{translateX: gestures[item.id].value}]}}>
+              <Animated.View style={{ transform: [{ translateX: gestures[item.id].value }] }}>
                 <ToDoCard
                   todo={item}
                   curTime={time}
@@ -182,7 +182,7 @@ const AllTodoScreen = () => {
           isVisibleMenu={isVisibleMenu}
           onPressCancel={() => setIsVisibleMenu(false)}
           onPressFloating={() => setIsVisibleMenu(!isVisibleMenu)}
-          />
+        />
       </FloatingButtonContainer>
       {usePetListWindow && (
         <PetListModal
@@ -228,6 +228,6 @@ const FloatingButtonContainer = styled.View<IFloatingButtonContainer>`
   right: 0;
   left: 0;
   background-color: ${(props) => (props.isVisibleMenu ? "rgba(0, 0, 0, 0.5)" : "rgba(0, 0, 0, 0.0)")};
-  z-index:${(props) => (props.isVisibleMenu ?  1 : 0)};
+  z-index:${(props) => (props.isVisibleMenu ? 1 : 0)};
   ${(props) => props.isVisibleMenu && `top: 0;`}
 `;
