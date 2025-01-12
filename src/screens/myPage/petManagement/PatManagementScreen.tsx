@@ -22,7 +22,6 @@ const PatManagementScreen = () => {
           navigation.goBack();
         }}
         rightTitle="편집"
-        isBlack={true}
       />
       <View style={styles.profileTitleContainer}>
         <View style={styles.profileTitle}>

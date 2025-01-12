@@ -39,6 +39,7 @@ import PaletteIcon from './paletteIcon.svg'
 import AlarmIcon from './alarmIcon.svg'
 import RepeatIcon from './repeatIcon.svg'
 import RightArrow from './chevron-right.svg'
+import LeftArrow from './chevron-left.svg'
 import HomeAvatar1 from './img_home_dog1.svg'
 import HomeAvatar2 from './img_home_dog2.svg'
 import HomeAvatar3 from './img_home_dog3.svg'
@@ -92,6 +93,7 @@ export {
 	AlarmIcon,
 	RepeatIcon,
 	RightArrow,
+	LeftArrow,
 	HomeAvatar1,
 	HomeAvatar2,
 	HomeAvatar3,

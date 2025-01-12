@@ -21,7 +21,8 @@ import { DiaryService } from "../../service/DiaryService";
 import { QueryKey } from "../../statics/constants/Querykey";
 import { Colors } from "../../styles/Colors";
 import CenterModal from "../../components/modal/CenterModal";
-import Test from "./Test";
+import CommentList from "./CommentList";
+//import AddComment from "./AddComment";
 
 dayjs.locale("ko");
 dayjs.extend(utc);
@@ -174,6 +175,7 @@ const DairyScreen = () => {
           {/* TODO:댓글 수 수정 */}
           <Title text={item?.commentCount} color={Colors.AEAEAE} style={{ marginLeft: 8 }} />
         </Pressable>
+
         {index !== diaryData?.length - 1 && <View style={styles.bottomLine} />}
       </View>
     );
@@ -292,7 +294,9 @@ const DairyScreen = () => {
             isComment={isComment}
             commentProfileId={commentProfileId}
           /> */}
-          <Test
+          <CommentList
+            visible={isVisibleComment} 
+            onClose={() => setIsVisibleComment(false)}
             commentDiaryId={commentDiaryId}
             isComment={isComment}
             commentProfileId={commentProfileId} 

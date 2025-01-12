@@ -17,6 +17,7 @@ export namespace AuthModel {
 		email: string
 	}
 	export interface ILoginResponseModel {
+
 		data: {
 			success: boolean;
 			data: {

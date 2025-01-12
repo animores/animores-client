@@ -1,5 +1,5 @@
 import AxiosContext from "../screens/context/AxiosContext";
-import {IPetType} from "../../types/PetTypes";
+import {IPetRequest, IPetType} from "../../types/PetTypes";
 
 export namespace PetService {
     export const pet = {
@@ -31,6 +31,10 @@ export namespace PetService {
                 console.error(error);
                 return [];
             }
+        },
+        create: async (body: IPetRequest) => {
+            const response = await AxiosContext.post(`/api/v1/pets`, body);
+            return {data: response};
         }
     }
 }

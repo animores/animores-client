@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, StyleProp, StyleSheet, View, ViewStyle, Dimensions } from "react-native";
-import Modal, { Direction } from "react-native-modal";
+import Modal from "react-native-modal";
 import { Colors } from "../../styles/Colors";
 import Title from "../text/Title";
 
@@ -21,6 +21,7 @@ interface IProps {
   _title?: string;
   _subTitle?: string;
   _onDelete?: () => void;
+  children?: React.ReactNode;
 }
 
 const width = Dimensions.get("window").width;
@@ -35,12 +36,13 @@ const BottomModal: React.FunctionComponent<IProps> = (props: IProps) => {
     swipeDirection = "down",
     BottomText,
     style,
-    footer,
+    footer : Footer,
     _isVisible,
     _onClose,
     _title,
     _subTitle,
     _onDelete,
+    children
   } = props;
 
   return (
@@ -57,7 +59,9 @@ const BottomModal: React.FunctionComponent<IProps> = (props: IProps) => {
       style={[style, styles.modalStyle]}
     >
       <View style={styles.modalContainer}>
-        {footer && footer()}
+        {Footer && <Footer/>}
+          {children}
+
         {/* 프로필 이미지: 기본 이미지로 할래요 */}
         {BottomText &&
           <Pressable>
@@ -108,6 +112,7 @@ export default BottomModal;
 
 const styles = StyleSheet.create({
   modalStyle: {
+    flex: 1,
     width: "100%",
     margin: "auto",
     justifyContent: "flex-end"
@@ -117,6 +122,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     backgroundColor: Colors.White,
     paddingBottom: 30,
+    height: 530,
   },
   basicTitle: {
     textAlign: "center",

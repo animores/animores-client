@@ -1,6 +1,6 @@
 import {RouteProp, useNavigation, useRoute} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, View} from 'react-native';
 import InputSearch from '../../../components/Input/InputSearch';
 import SingleButton from '../../../components/button/SingleButton';
@@ -9,11 +9,8 @@ import HeaderNavigation from '../../../navigation/HeaderNavigation';
 import {RootStackParamList} from '../../../navigation/type';
 import {ScreenName} from '../../../statics/constants/ScreenName';
 import {Colors} from '../../../styles/Colors';
-import {useQuery} from "@tanstack/react-query";
-import {QueryKey} from "../../../statics/constants/Querykey";
-import {PetService} from "../../../service/PetService";
-import {IBreedType} from "../../../../types/PetTypes";
 import AutoComplete from "./AutoComplete";
+import {useBreedList} from "./hooks/useBreed";
 
 const BreedType = () => {
     const navigation =
@@ -22,10 +19,7 @@ const BreedType = () => {
     const route = useRoute<RouteProp<RootStackParamList, ScreenName.BreedType>>(),
         {petType, isEdit} = route.params;
 
-    const {data : breedTypeList} = useQuery<IBreedType[]>([QueryKey.BREED_LIST], () => PetService.pet.breedList(petType), {
-        enabled: !!petType,
-        initialData : [],
-    });
+    const breedList = useBreedList(petType);
 
     return (
         <View style={styles.container}>
@@ -50,18 +44,18 @@ const BreedType = () => {
                         name={'_'}
                         placeholder={'직접 입력하세요'}
                     />
-                    <AutoComplete searchText={keyword} suggestionList={breedTypeList.map(item => item.name)}
+                    <AutoComplete searchText={keyword} suggestionList={breedList.map(item => item.name)}
                                   onPress={setKeyword}/>
                 </View>
                 <View style={styles.buttonContainer}>
                     {isEdit ? <SingleButton title={"완료"} onPress={() => {
-                        navigation.navigate(ScreenName.AddPet, {breed : keyword});
+                        navigation.navigate(ScreenName.AddPet, {breed : keyword, petType});
                     }} disabled={false}/> : <SingleButton
                         title="다음"
                         disabled={!keyword}
                         onPress={() => {
                             if (keyword) {
-                                navigation.navigate(ScreenName.AddPet, {breed: keyword});
+                                navigation.navigate(ScreenName.AddPet, {breed: keyword, petType});
                             }
                         }}
                         style={{marginTop: 70}}

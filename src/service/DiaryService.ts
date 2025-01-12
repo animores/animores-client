@@ -59,7 +59,7 @@ export namespace DiaryService {
 			}
 		},
 		addComment: async (profileId:number, diaryId: number, content: string) => {
-      		//console.log('들어옴', content);
+      		//console.log('들어옴', profileId, diaryId, content);
 
 			try {
 				const response = await AxiosContext.post(`/api/v1/diary-comments`, {profileId, diaryId, content});

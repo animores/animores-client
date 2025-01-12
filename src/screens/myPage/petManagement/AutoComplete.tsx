@@ -22,14 +22,13 @@ const AutoComplete = ({searchText, suggestionList, onPress}: AutoCompleteDropdow
             }
         }).map((base, idx) => {
             const [pre, rest] = _getMatchedPrefix(baseText, base);
-            return <>
-                <Text style={styles.item} onPress={() => {
-                    onPress && onPress(base)
-                }}>
-                    <Text style={{fontWeight: "500"}}>{pre}</Text>
-                    <Text>{rest}</Text>
-                </Text>
-            </>
+            return <Text key={base} style={styles.item} onPress={() => {
+                onPress && onPress(base)
+            }}>
+                <Text style={{fontWeight: "500"}}>{pre}</Text>
+                <Text>{rest}</Text>
+            </Text>
+
         })}
     </ScrollView>
 };
@@ -72,7 +71,7 @@ const styles = StyleSheet.create({
     item: {
         paddingHorizontal: 20,
         paddingVertical: 7,
-        fontSize : 16
+        fontSize: 16
     }
 })
 
