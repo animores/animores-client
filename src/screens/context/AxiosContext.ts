@@ -10,7 +10,7 @@ const instance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  baseURL: "http://180.229.5.21:8080",
+  baseURL: "http://14.4.247.100:8080",
 } as AxiosRequestConfig);
 
 //요청 인터셉터
