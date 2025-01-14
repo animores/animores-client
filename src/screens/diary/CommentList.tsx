@@ -1,36 +1,28 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
+import {useMutation, useQuery, useQueryClient,} from "@tanstack/react-query";
 import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
-import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
   Animated,
-  Pressable,
-  Image, 
-  TextInput,
   Dimensions,
-  TouchableOpacity,
+  Image,
+  Modal,
+  Pressable,
   ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import Toast from "react-native-toast-message";
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import { DiaryService } from "../../service/DiaryService";
-import { QueryKey } from "../../statics/constants/Querykey";
-import { Colors } from "../../styles/Colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useController, Controller, Control, useForm } from "react-hook-form";
-import InputBox from "../../components/Input/InputBox";
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import {DiaryService} from "../../service/DiaryService";
+import {QueryKey} from "../../statics/constants/Querykey";
+import {Colors} from "../../styles/Colors";
 import Title from "../../components/text/Title";
 import AddComment from "./AddComment";
+import {GestureTest} from "../myPage/petManagement/GestureTest";
 
 // icon
-import { User } from "../../assets/svg";
-import { IconTrash } from "../../assets/icons";
+import {User} from "../../assets/svg";
+import {IconTrash} from "../../assets/icons";
+import Toast from "react-native-toast-message";
 
 export interface CommentProps {
   visible: boolean;
@@ -102,58 +94,11 @@ const CommentList = (props: CommentProps) => {
       });
     };
 
-    const handleGestureEvent = (id) => Animated.event(
-      [{ nativeEvent: { translationX: gestures[id] } }],
-      { useNativeDriver: true }
-    );
-
-    const handleGestureStateChange = (id) => (event) => {
-      if (event.nativeEvent.state === State.END) {
-        const { translationX } = event.nativeEvent;
-
-        if (Math.abs(translationX) > 20) {
-          // One of the content has been swiped - reset others
-          resetAllGestures(id);
-        }
-
-        if (translationX > 50) {
-          // Swipe Right - Move modal content right
-          animateSwipe(id, 0);
-        } else if (translationX < -50) {
-          // Swipe Left - Move modal content left
-          animateSwipe(id, -65);
-        } else {
-          resetPosition(id);
-        }
-      }
-    }
-
-    const animateSwipe = (id, toValue) => {
-      const others = comments.filter((el, index) => { 
-          el.id !== visibleItem
-      });
-      console.log(others.map((el) => el.id));
-      Animated.spring(gestures[id], {
-        toValue,
-        useNativeDriver: true,
-      }).start(() => {
-        // Reset the swipe animation after the effect
-        //resetPosition(id);
-      });
-    };
-
-    const resetPosition = (id) => {
-      Animated.spring(gestures[id], {
-        toValue: 0,
-        useNativeDriver: true,
-      }).start();
-    };
-
     // 댓글 작성된 시간
     function timeAgo(isoDate) {
       const now = new Date();
       const past = new Date(isoDate);
-      
+
       past.setHours(past.getHours() + 9);// 9시간 빼기
       const diff = now - past; // 밀리초 차이
 
@@ -198,32 +143,25 @@ const CommentList = (props: CommentProps) => {
           />
 
           <ScrollView contentContainerStyle={styles.scrollContainer}>
+            <GestureHandlerRootView>
             {isComment ? (
-              comments.map(item => (
-                <View style={styles.cardContainer}>
-                  <PanGestureHandler
-                  key={item.commentId}
-                  onGestureEvent={handleGestureEvent(item.commentId)}
-                  onHandlerStateChange={handleGestureStateChange(item.commentId)}
+                comments.map((item) => (
+                  <View style={styles.cardContainer}>
+                  <GestureTest
+                      key={item.commentId}
                   >
-                    <Animated.View
-                      style={[
-                      styles.itemContainer,
-                      { transform: [{ translateX: gestures[item.commentId] }] }, // Apply the swipe effect
-                      ]}
-                    >
                       <View style={styles.commentContainer}>
-                          {item.imageUrl !== null ? (
+                        {item.imageUrl !== null ? (
                             <Image
-                                source={{ uri: `${baseUrl}/${item.imageUrl}` }}
+                                source={{uri: `${baseUrl}/${item.imageUrl}`}}
                                 style={styles.profileImage}
                             />
-                          ) : (
-                            <User />
-                          )}
-                          <View style={styles.itemContent}>
-                            <View style={{ flexDirection: "row" }}>
-                              <Title
+                        ) : (
+                            <User/>
+                        )}
+                        <View style={styles.itemContent}>
+                          <View style={{flexDirection: "row"}}>
+                            <Title
                                 text={item.name}
                                 fontSize={14}
                                 fontWeight="bold"
@@ -233,28 +171,28 @@ const CommentList = (props: CommentProps) => {
                                 text={timeAgo(item.createdAt)}
                                 fontSize={12}
                                 color={Colors.AEAEAE}
-                                style={{ marginLeft: 12 }}
-                              />
-                            </View>
-                            <Title
-                              text={item.content}
-                              fontSize={14}
-                              style={{ marginTop: 8 }}
+                                style={{marginLeft: 12}}
                             />
                           </View>
-                          <Pressable 
+                          <Title
+                              text={item.content}
+                              fontSize={14}
+                              style={{marginTop: 8}}
+                          />
+                        </View>
+                        <Pressable
                             onPress={() => console.log('11')}
-                            style={{ marginLeft: 12, alignSelf: "flex-end" }}
-                          >
-                            <Title
+                            style={{marginLeft: 12, alignSelf: "flex-end"}}
+                        >
+                          <Title
                               text={"답글 달기"}
                               fontSize={14}
                               color={Colors.AEAEAE}
-                            />
-                          </Pressable>
+                          />
+                        </Pressable>
                       </View>
-                    </Animated.View>
-                  </PanGestureHandler>
+                    {/*</Animated.View>*/}
+                  </GestureTest>
 
                   <View style={styles.hidden_card}>
                     {/* <Pressable onPress={() => console.log('11')}>
@@ -266,8 +204,9 @@ const CommentList = (props: CommentProps) => {
                     </Pressable>
                   </View>
                 </View>
-              ))
+                ))
             ) : null}
+            </GestureHandlerRootView>
           </ScrollView>
 
           {/* 댓글 입력창 */}
