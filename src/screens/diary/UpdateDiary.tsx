@@ -64,6 +64,7 @@ const UpdateDiary = () => {
       headerTitle="일지 수정하기"
       submitButtonText="완료"
       initialContent={item.content}
+      //initialImageUrls={item.images}
       onSubmit={handleSubmit}
       onBack={() => navigation.goBack()}
     />
