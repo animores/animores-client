@@ -94,9 +94,10 @@ const DairyScreen = () => {
     setIsVisibleComment(true);
   };
 
-  const getSelectedItem = () => {
+  // 일지 수정 페이지로 이동
+  const handleUpdateDiary = () => {
     if (selectedItem) {
-      navigation.navigate(ScreenName.UpdateDiary as never, selectedItem as never);
+      navigation.navigate(ScreenName.UpdateDiary as never, { item: selectedItem });
       setIsFirstVisibleMore(false);
     }
   }
@@ -109,7 +110,7 @@ const DairyScreen = () => {
         <View style={[styles.footer, { marginTop: 33 }]}>
           <View style={[styles.buttonContainer, { marginRight: 10 }]}>
             <Pressable
-              onPress={getSelectedItem}
+              onPress={handleUpdateDiary}
               style={styles.buttonContainer}
             >
               <Title

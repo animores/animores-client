@@ -137,13 +137,11 @@ export namespace ToDoService {
         },
 		update: async (id: number) => {
 			try {
-				const response = await AxiosContext.patch(
-                    `/api/v1/todos/${id}`, 
-					{
-						headers: {
-							'Content-Type': 'application/json',
-						},
-					});
+				const response = await AxiosContext.patch(`/api/v1/todos/${id}`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
 				return { data: response.data, status: response.status };
 			} catch (error) {
 				console.error('ToDoService.todo.update:', error);
