@@ -40,6 +40,10 @@ export interface DiaryListProps {
     ListEmptyComponent?: React.ReactNode;
     /** FlatList 스타일 커스터마이징 */
     contentContainerStyle?: object;
+    /** Pull-to-Refresh 새로고침 중 상태 */
+    refreshing?: boolean;
+    /** Pull-to-Refresh 핸들러 */
+    onRefresh?: () => void;
 }
 
 /**

@@ -8,13 +8,20 @@ export namespace DiaryModel {
 		},
 	}
 
+	export interface IMediaItem {
+		id: number
+		order: number
+		type: 'V' | 'I'  // V: Video, I: Image
+		url: string
+	}
+
 	export interface IDiaryModel {
-		commentCount: string
+		commentCount: number
 		content: string
 		createdAt: string
 		diaryId: number
 		imageUrl?: string
-		media: Array<string>
+		media: Array<IMediaItem>
 		name: string
 		profileId: number
 		likeYn: boolean
