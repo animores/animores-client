@@ -44,14 +44,16 @@ const HomeScreen = () => {
   
   const currentProfile = useRecoilValue(CurrentProfileAtom);
 
-  const { data: todayToDo } = useQuery({
+  const { data: todayToDo, isLoading, isError } = useQuery({
     queryKey: [QueryKey.TODO_LIST],
     queryFn: () => ToDoService.todo.today(1, 5),
   });
 
-  const todayTodoList = [...(todayToDo?.data?.data?.toDoList || [])];
+  if (isLoading) return null;
 
-  if (todayTodoList.length < 1) {
+  const todayTodoList = todayToDo?.data?.data?.toDoList ?? [];
+
+  if (todayTodoList.length === 0) {
     todayTodoList.push({
       id: 0,
       title: "산책",
