@@ -46,17 +46,15 @@ export interface IAddTodo {
 }
 
 export interface IUpdateTodo {
-    color: string,
-    content: string | null,
-    date: string,
-    intervalNum: number,
-    isAllDay: boolean,
-    isUsingAlarm: boolean,
-    pets: string[],
-    tag: ToDoType | null,
-    time: string,
-    unit: string | null,
-    weekDays: string[],
+    profileId: string;
+    petIds: string[];
+    tag: ToDoType | null;
+    content: string | null;
+    time: string;
+    isAllDay: boolean;
+    color: string;
+    isUsingAlarm: boolean;
+    repeat: string | null;
 }
 
 export interface IListToDoParam {

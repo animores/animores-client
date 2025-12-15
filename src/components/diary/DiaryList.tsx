@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { DiaryModel } from '../../model/DiaryModel';
 import { DiaryListProps } from './types';
 import { diaryStyles } from './styles';
@@ -17,6 +17,8 @@ const DiaryList: React.FC<DiaryListProps> = ({
     onEndReached,
     ListEmptyComponent,
     contentContainerStyle,
+    refreshing = false,
+    onRefresh,
 }) => {
     const renderItem = ({ item, index }: { item: DiaryModel.IDiaryModel; index: number }) => (
         <DiaryItem
@@ -60,6 +62,14 @@ const DiaryList: React.FC<DiaryListProps> = ({
             onEndReached={onEndReached}
             onEndReachedThreshold={0.6}
             ListEmptyComponent={renderEmptyComponent}
+            refreshControl={
+                onRefresh ? (
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                    />
+                ) : undefined
+            }
         />
     );
 };

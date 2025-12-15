@@ -1,12 +1,13 @@
 import {IProfile} from "../../../types/Profile";
 import {ScreenName, StackName} from "../../statics/constants/ScreenName"
+import {DiaryModel} from "../../model/DiaryModel";
 
 export type RootStackParamList = {
     [ScreenName.Login]: undefined;
     [ScreenName.Join]: undefined;
     [ScreenName.JoinCompleted]: undefined;
     [ScreenName.CreateDiary]: undefined;
-    [ScreenName.UpdateDiary]: undefined;
+    [ScreenName.UpdateDiary]: { item: DiaryModel.IDiaryModel };
     [ScreenName.AddTodo]: undefined;
 	[ScreenName.Mypage]: undefined;
 	[ScreenName.Home]: undefined;

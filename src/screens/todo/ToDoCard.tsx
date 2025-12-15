@@ -156,7 +156,6 @@ const ToDoCard = ({ todo, onDelete, isChecked, onCheckChange, onClickUpdateTodo,
   }
 
   const onUpdate = async (item: IAddTodo) => {
-    //console.log("item :", item);
     navigation.navigate(ScreenName.UpdateTodo, { item });
   };
 

@@ -8,6 +8,8 @@ import Title from '../text/Title';
 import HeaderNavigation from '../../navigation/HeaderNavigation';
 import { DiaryFormEditorProps } from './types';
 import { diaryStyles } from './styles';
+import { IMAGE_BASE_URL } from '@env';
+import DiaryImage from './DiaryImage';
 
 /**
  * 일지 작성/수정 공통 폼 컴포넌트
@@ -22,6 +24,17 @@ const DiaryFormEditor: React.FC<DiaryFormEditorProps> = ({
 }) => {
     const [imageUrls, setImageUrls] = useState<string[]>(initialImageUrls);
     const [status, requestPermission] = ImagePicker.useMediaLibraryPermissions();
+
+    // media 배열에서 이미지만 필터링 및 URL 변환
+    const imagesToDisplay = React.useMemo(() => {
+        if (initialImageUrls && initialImageUrls.length > 0) {
+          return initialImageUrls
+            .filter((mediaItem) => mediaItem.type === 'I')
+            .sort((a, b) => a.order - b.order)
+            .map((mediaItem) => `${IMAGE_BASE_URL}/${mediaItem.url}`);
+        }
+        return [];
+    }, [initialImageUrls]);
 
     const methods = useForm({
         defaultValues: {
@@ -63,8 +76,9 @@ const DiaryFormEditor: React.FC<DiaryFormEditorProps> = ({
     };
 
     const handleSubmit = async () => {
-        const content = methods.getValues('diary');
-        await onSubmit(content, imageUrls);
+      console.log(imageUrls);
+      const content = methods.getValues('diary');
+      await onSubmit(content, imageUrls);
     };
 
     return (
@@ -91,21 +105,37 @@ const DiaryFormEditor: React.FC<DiaryFormEditorProps> = ({
                     <Pressable onPress={uploadImage} style={diaryStyles.imageContainer}>
                         <Title text={'사진 등록'} />
                         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                            {imageUrls.length > 0 ? (
-                                imageUrls.map((url, index) => (
-                                    <View key={index} style={diaryStyles.selectedImageContainer}>
-                                        <Image
-                                            source={{ uri: url }}
-                                            style={diaryStyles.selectedImage}
-                                        />
-                                        {index === imageUrls.length - 1 && (
-                                            <AddImage style={{ marginLeft: 11 }} />
-                                        )}
-                                    </View>
-                                ))
-                            ) : (
-                                <AddImage style={{ marginTop: 11 }} />
-                            )}
+                          {imagesToDisplay.length > 0 ? (
+                            imagesToDisplay.map((url, index) => (
+                              <View key={index} style={diaryStyles.selectedImageContainer}>
+                                <Image
+                                  source={{ uri: url }}
+                                  style={diaryStyles.selectedImage}
+                                />
+                                {index === imagesToDisplay.length - 1 && (
+                                  <AddImage style={{ marginLeft: 11 }} />
+                                )}
+                              </View>
+                            ))
+                          ) : (
+                            <AddImage style={{ marginTop: 11 }} />
+                          )}
+
+                          {/* {imageUrls.length > 0 ? (
+                            imageUrls.map((url, index) => (
+                              <View key={index} style={diaryStyles.selectedImageContainer}>
+                                <DiaryImage
+                                    uri={url}
+                                    style={diaryStyles.selectedImage}
+                                />
+                                {index === imageUrls.length - 1 && (
+                                  <AddImage style={{ marginLeft: 11 }} />
+                                )}
+                              </View>
+                            ))
+                          ) : (
+                            <AddImage style={{ marginTop: 11 }} />
+                          )} */}
                         </ScrollView>
                     </Pressable>
                     <View style={diaryStyles.videoContainer}>

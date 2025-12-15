@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../../navigation/type';
 import { useDiaryListByDate } from '../../hooks/useDiaryList';
 import DiaryList from '../../components/diary/DiaryList';
 import BottomModal from '../../components/modal/BottomModal';
@@ -21,7 +23,7 @@ interface DiaryListByDateProps {
 
 const DiaryListByDate: React.FC<DiaryListByDateProps> = ({ profileId, date }) => {
     const queryClient = useQueryClient();
-    const navigation = useNavigation();
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
     const [isFirstVisibleMore, setIsFirstVisibleMore] = useState<boolean>(false);
     const [isVisibleDelete, setIsVisibleDelete] = useState<boolean>(false);
@@ -71,8 +73,7 @@ const DiaryListByDate: React.FC<DiaryListByDateProps> = ({ profileId, date }) =>
 
     // 댓글 아이콘 클릭 핸들러
     const handlePressComment = (item: DiaryModel.IDiaryModel) => {
-        const count = parseInt(item.commentCount, 10);
-        setIsComment(count > 0);
+        setIsComment(item.commentCount > 0);
 
         if (item.diaryId !== null && item.profileId !== null) {
             setDiaryId(item.diaryId);
@@ -84,7 +85,7 @@ const DiaryListByDate: React.FC<DiaryListByDateProps> = ({ profileId, date }) =>
     // 수정 버튼 핸들러
     const handleEdit = () => {
         if (selectedItem) {
-            (navigation as any).navigate(ScreenName.UpdateDiary, selectedItem);
+            navigation.navigate(ScreenName.UpdateDiary, { item: selectedItem });
             setIsFirstVisibleMore(false);
         }
     };

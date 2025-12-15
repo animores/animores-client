@@ -1,11 +1,12 @@
 import { IProfile } from "./Profile";
+import { DiaryModel } from "../src/model/DiaryModel";
 
 export type RootStackParams = {
 	BottomTab: undefined;
 	Login: undefined;
 	Join: undefined;
 	CreateDiary: undefined;
-	UpdateDiary: undefined;
+	UpdateDiary: DiaryModel.IDiaryModel;
 	AddTodo: undefined;
 	AlertSetting: undefined;
 	CustomerService: undefined;

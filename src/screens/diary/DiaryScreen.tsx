@@ -18,11 +18,13 @@ import { Colors } from "../../styles/Colors";
 import CommentList from "./CommentList";
 import { ScreenName } from "../../statics/constants/ScreenName";
 import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../../navigation/type";
 import DiaryList from "../../components/diary/DiaryList";
 
-const DairyScreen = () => {
+const DiaryScreen = () => {
   const queryClient = useQueryClient();
-  const navigation = useNavigation();
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   const [isFirstVisibleMore, setIsFirstVisibleMore] = useState<boolean>(false); //더보기(수정/삭제) 모달
   const [isVisibleDelete, setIsVisibleDelete] = useState<boolean>(false); // 일지삭제 확인 모달 보이기
@@ -36,23 +38,18 @@ const DairyScreen = () => {
   
   //일지 리스트
   //TODO: profile api 가져와서 profileId에 넣기
-  const { data, fetchNextPage, isFetchingNextPage, hasNextPage } =
-    useInfiniteQuery(
-      [QueryKey.DIARY_LIST],
-      ({ pageParam = 1 }) => DiaryService.diary.list(1, pageParam, 5),
-      {
-        getNextPageParam: (lastPage, allPages) => {
-          const totalCount = lastPage?.data?.data.totalCount;
-          const currentPageDataCount = lastPage?.data?.data.diaries.length;
+  const { data, fetchNextPage, isFetchingNextPage, hasNextPage, refetch, isRefetching } =
+    useInfiniteQuery({
+      queryKey: [QueryKey.DIARY_LIST],
+      queryFn: ({ pageParam = 1 }) => DiaryService.diary.list(1, pageParam, 5),
+      getNextPageParam: (lastPage, allPages) => {
+        const totalCount = lastPage?.data?.data.totalCount;
+        const currentPageDataCount = lastPage?.data?.data.diaries.length;
 
-          if (currentPageDataCount < totalCount) {
-            return allPages.length + 1;
-          } else {
-            return undefined;
-          }
-        },
-      }
-    );
+        return currentPageDataCount < totalCount ? allPages.length + 1 : undefined;
+      },
+    }
+  );
 
   //일지 삭제
   const { mutate: deleteDiaryMutate } = useMutation(
@@ -68,7 +65,8 @@ const DairyScreen = () => {
 
           setIsFirstVisibleMore(false);
           setIsVisibleDelete(false);
-          await queryClient.invalidateQueries([QueryKey.DIARY_LIST]);
+          await queryClient.invalidateQueries({ queryKey: [QueryKey.DIARY_LIST] });
+          await queryClient.refetchQueries({ queryKey: [QueryKey.DIARY_LIST] });
           //일지 목록 쿼리를 무효화함
         }
       },
@@ -97,7 +95,7 @@ const DairyScreen = () => {
   // 일지 수정 페이지로 이동
   const handleUpdateDiary = () => {
     if (selectedItem) {
-      navigation.navigate(ScreenName.UpdateDiary as never, { item: selectedItem });
+      navigation.navigate(ScreenName.UpdateDiary, { item: selectedItem });
       setIsFirstVisibleMore(false);
     }
   }
@@ -157,6 +155,10 @@ const DairyScreen = () => {
     fetchNextPage();
   };
 
+  const handleRefresh = () => {
+    refetch();
+  };
+
   const handleDelete = async () => {
     if (selectedItem && selectedProfileId !== null) {
       deleteDiaryMutate({ diaryId: selectedItem.diaryId, profileId: selectedProfileId });
@@ -168,7 +170,7 @@ const DairyScreen = () => {
   return (
     <>
       <SafeAreaView style={styles.container}>
-        <HeaderNavigation miwwddletitle="일지" hasBackButton={false} />
+        <HeaderNavigation middletitle="일지" hasBackButton={false} />
         <DiaryList
           diaries={diaryData}
           onPressMore={handlePressMore}
@@ -176,6 +178,8 @@ const DairyScreen = () => {
           enableActions={true}
           isLoading={isFetchingNextPage}
           onEndReached={loadMoreData}
+          refreshing={isRefetching}
+          onRefresh={handleRefresh}
         />
         {/* 플로팅 버튼 */}
         <View
@@ -227,7 +231,7 @@ const DairyScreen = () => {
   );
 };
 
-export default DairyScreen;
+export default DiaryScreen;
 
 const styles = StyleSheet.create({
   container: {
