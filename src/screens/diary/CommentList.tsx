@@ -43,13 +43,20 @@ export interface CommentProps {
   setSelectedCommentId: () => void;
 }
 
+export interface CommentBarProps {
+  item: DiaryModel.IDiaryCommentModel;
+  profileId: number;
+  setIsVisibleComment: (v: boolean) => void;
+  setSelectedCommentId: (id: number) => void;
+  setSelectedCommentName: (name: string) => void;
+}
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HIDDEN_MENU_WIDTH = 65;
 const TIMING_DURATION = 500;
 const baseUrl = process.env.IMAGE_BASE_URL;
 
-const CommentList = (props: CommentProps) => {
-  const { visible, setIsVisibleComment, diaryId, isComment, profileId } = props;
+const CommentList = ({ visible, setIsVisibleComment, diaryId, isComment, profileId }: CommentProps) => {
   // 선택된 댓글이 있으면 대댓글 모드, 없으면 댓글 모드
   const [selectedCommentId, setSelectedCommentId] = useState<number | null>(null);
   const [selectedCommentName, setSelectedCommentName] = useState<string | null>(null);
@@ -61,80 +68,79 @@ const CommentList = (props: CommentProps) => {
     enabled: !!diaryId,
   });
 
-  const comments: DiaryModel.IDiaryCommentModel[] = commentList?.data?.comments || [];
+  const comments: DiaryModel.IDiaryCommentModel[] = commentList?.data?.comments ?? [];
 
   useEffect(() => {
     if (!visible) {
       setSelectedCommentId(null);
+      setSelectedCommentName(null);
     }
   }, [visible])
 
   return (
-    <View>
-      <Modal
-        transparent={true}
-        visible={visible}
-        animationType="fade"
-      >
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
-            <View style={styles.modalOverlay}>
-              <TouchableOpacity onPress={() => setIsVisibleComment(false)} style={{ flex: 1 }} />
-              <View style={styles.modalContainer}>
-                <View style={styles.footerTopLine} />
+    <Modal
+      transparent={true}
+      visible={visible}
+      animationType="fade"
+    >
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity onPress={() => setIsVisibleComment(false)} style={{ flex: 1 }} />
+            <View style={styles.modalContainer}>
+              <View style={styles.footerTopLine} />
 
-                <Title
-                  text={"댓글"}
-                  fontSize={16}
-                  style={{ textAlign: "center", marginTop: 10, marginBottom: 10 }}
-                />
+              <Title
+                text={"댓글"}
+                fontSize={16}
+                style={{ textAlign: "center", marginTop: 10, marginBottom: 10 }}
+              />
 
-                <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-                  {isComment ?
-                    comments.map((item, index) => (
-                      <CommentBar
-                        key={index}
-                        item={item}
-                        setIsVisibleComment={setIsVisibleComment}
-                        setSelectedCommentId={setSelectedCommentId}
-                        setSelectedCommentName={setSelectedCommentName}
-                        profileId={profileId}
-                      />
-                    )
-                  ) : null}
-                </ScrollView>
-
-                {/* 댓글/대댓글 입력창
-                  댓글달기, 대댓글달기(답글달기) 함수 호출 시
-                  AddComment 컴포넌트에 해당 파라미터 전달
-                  - 댓글일 경우 파라미터에 게시글 작성자 id를 전달
-                  - 대댓글일 경우 파라미터에 댓글 작성자 id를 전달
-                */}
-                {selectedCommentId !== null ? (
-                  <AddComment
-                    diaryCommentId={selectedCommentId}
-                    diaryCommentName={selectedCommentName}
-                    setSelectedCommentId={setSelectedCommentId}
-                    refetch={refetch}
-                  /> // * 대댓글일 경우
-                ) : (
-                  <AddComment
-                    diaryId={diaryId}
-                    diaryCommentName={selectedCommentName}
-                    setSelectedCommentId={setSelectedCommentId}
-                    refetch={refetch}
-                  /> // * 댓글일 경우
+              <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                {isComment &&
+                  comments.map((item) => (
+                    <CommentBar
+                      key={item.commentId}
+                      item={item}
+                      profileId={profileId}
+                      setIsVisibleComment={setIsVisibleComment}
+                      setSelectedCommentId={setSelectedCommentId}
+                      setSelectedCommentName={setSelectedCommentName}
+                    />
+                  )
                 )}
-              </View>
+              </ScrollView>
+
+              {/* 댓글/대댓글 입력창
+                댓글달기, 대댓글달기(답글달기) 함수 호출 시
+                AddComment 컴포넌트에 해당 파라미터 전달
+                - 댓글일 경우 파라미터에 게시글 작성자 id를 전달
+                - 대댓글일 경우 파라미터에 댓글 작성자 id를 전달
+              */}
+              {selectedCommentId !== null ? (
+                <AddComment
+                  diaryCommentId={selectedCommentId}
+                  diaryCommentName={selectedCommentName ?? ""}
+                  setSelectedCommentId={setSelectedCommentId}
+                  refetch={refetch}
+                /> // * 대댓글일 경우
+              ) : (
+                <AddComment
+                  diaryId={diaryId}
+                  diaryCommentName={selectedCommentName}
+                  setSelectedCommentId={setSelectedCommentId}
+                  refetch={refetch}
+                /> // * 댓글일 경우
+              )}
             </View>
-          </KeyboardAvoidingView>
-        </GestureHandlerRootView>
-        <Toast />
-      </Modal>
-    </View>
+          </View>
+        </KeyboardAvoidingView>
+      </GestureHandlerRootView>
+      <Toast />
+    </Modal>
   );
 };
 
@@ -194,13 +200,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     flexDirection: "row",
   },
-  profileImage: {
-    alignSelf: "center",
-    width: 50,
-    height: 50,
-    marginRight: 12,
-    borderRadius: 50,
-  },
   cardContainer: {
     position: 'relative', // 카드와 메뉴의 상대 위치 설정
     justifyContent: 'center',
@@ -256,7 +255,7 @@ function timeAgo(isoDate: string) {
 
 
 /** Comment Bar */
-const CommentBar = (props: CommentProps) => {
+const CommentBar = (props: CommentBarProps) => {
   const { item, setIsVisibleComment, setSelectedCommentId, setSelectedCommentName, profileId } = props;
   const queryClient = useQueryClient();
   const currentProfile = useRecoilValue(CurrentProfileAtom);
@@ -304,8 +303,10 @@ const CommentBar = (props: CommentProps) => {
             text1: "댓글이 삭제되었습니다.",
           });
 
-          setIsVisibleComment(false);
-          await queryClient.invalidateQueries([QueryKey.COMMENT_LIST]);
+          //setIsVisibleComment(false);
+          await queryClient.invalidateQueries({
+            queryKey: [QueryKey.COMMENT_LIST, diaryId],
+          });
           //일지 목록 쿼리를 무효화함
         }
       },

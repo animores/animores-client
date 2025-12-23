@@ -18,7 +18,7 @@ export interface CommentProps {
   diaryId?: number | null;
   diaryCommentId?: number | null;
   diaryCommentName: string;
-  setSelectedCommentId: () => void;
+  setSelectedCommentId: (id: string | null) => void;
   refetch: () => void;
 }
 
@@ -34,7 +34,7 @@ const AddComment = (props: CommentProps) => {
     },
   });
 
-  const { control, addComment: formSubmit } = methods;
+  const { control, getValues, reset } = methods;
   const { field } = useController({
     control,
     name: 'comment',
@@ -52,6 +52,8 @@ const AddComment = (props: CommentProps) => {
             type: 'success',
             text1: '댓글이 등록되었습니다.',
           });
+          reset({ comment: '' });
+          setIsInputText(false);
           refetch();
         }
       },
@@ -71,6 +73,9 @@ const AddComment = (props: CommentProps) => {
             type: 'success',
             text1: '대댓글이 등록되었습니다.',
           });
+          reset({ comment: '' });
+          setIsInputText(false);
+          closeReply();
           refetch();
         }
       },
@@ -83,35 +88,47 @@ const AddComment = (props: CommentProps) => {
   // 댓글 입력버튼 클릭 시
   const addComment = async() => {
     const profile = await AsyncStorage.getItem("userInfo");
-
-    if (profile) {
-      const parsedProfile = JSON.parse(profile);
-      const profileId = parsedProfile.id
-      const content = methods.getValues('comment');
-
-      if (diaryCommentId) { // 대댓글일 경우
-      console.log('reply...', profileId, diaryCommentId, content);
-        addReplyMutate({profileId: profileId, diaryCommentId: diaryCommentId, content: content});
-      } else { // 댓글일 경우
-      console.log('comment...', profileId, diaryId, content);
-        addCommentMutate({profileId: profileId, diaryId: diaryId, content: content});
-      }
-    } else {
-      console.error("comment error!");
+    if (!profile) {
+      console.error("userInfo not found");
+      return;
     }
+    
+    const parsedProfile = JSON.parse(profile);
+    const profileId = parsedProfile.id
+
+    const content = getValues("comment").trim();
+    if (!content) return;
+
+    if (diaryCommentId) { // 대댓글일 경우
+      console.log('reply...', profileId, diaryCommentId, content);
+      addReplyMutate({
+        profileId,
+        diaryCommentId,
+        content,
+      });
+      return;
+    }
+
+    if (!diaryId) {
+      console.error("diaryId is missing");
+      return;
+    }
+
+    console.log('comment...', profileId, diaryId, content);
+    addCommentMutate({ // 댓글일 경우
+      profileId,
+      diaryId,
+      content,
+    });
   }
 
   // 댓글 입력 시
   const handleOnChangeComment = (inputText:string) => {
-    if(inputText !== ''){
-      setIsInputText(true);
-    } else {
-      setIsInputText(false);
-    }
+    setIsInputText(inputText.trim().length > 0);
   }
 
   const closeReply = () => {
-    setSelectedCommentId('');
+    setSelectedCommentId(null);
   }
 
   return (
@@ -131,7 +148,10 @@ const AddComment = (props: CommentProps) => {
           //multiline
           //numberOfLines={20}
           value={field.value}
-          onChangeText={(value) => field.onChange(value) && handleOnChangeComment(value)}
+          onChangeText={(value) => {
+            field.onChange(value);
+            handleOnChangeComment(value);
+          }}
           placeholder={
             diaryCommentId ? '대댓글을 입력하세요' : '댓글을 입력하세요'
           }
