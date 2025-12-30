@@ -124,16 +124,12 @@ export namespace DiaryService {
 		replyDelete: async (replyId: number) => {
 			console.log('replyId', replyId);
 			try {
-				const response = await AxiosContext.delete(`/api/v1/diary-reply/${replyId}`, {
-					data: {
-						replyId,
-					},
-				});
-				console.log(response.data);
+				const response = await AxiosContext.delete(`/api/v1/diary-reply/${replyId}`);
+				console.log("replyDelete response:", response.data);
 				return { data: response.data, status: response.status };
 			} catch (error) {
 				console.error('DiaryService.diary.replyDelete:', error);
-				return { data: null, status: error || 500 };
+				return { data: error?.response?.data ?? null, status: error?.response?.status ?? 500 };
 			}
 		},
 		replyList: async (commentId: number, profileId: number, page: number, size: number) => {
