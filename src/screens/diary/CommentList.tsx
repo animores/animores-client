@@ -28,6 +28,7 @@ import { QueryKey } from "../../statics/constants/Querykey";
 import { Colors } from "../../styles/Colors";
 import AddComment from "./AddComment";
 import SwipeableComment from "./SwipeableComment";
+import dayjs from 'dayjs';
 
 // icon
 import { IconTrash } from "../../assets/icons";
@@ -46,6 +47,7 @@ export interface CommentProps {
 export interface CommentBarProps {
   item: DiaryModel.IDiaryCommentModel;
   profileId: number;
+  diaryId: number;
   setIsVisibleComment: (v: boolean) => void;
   setSelectedCommentId: (id: number) => void;
   setSelectedCommentName: (name: string) => void;
@@ -105,6 +107,7 @@ const CommentList = ({ visible, setIsVisibleComment, diaryId, isComment, profile
                     <CommentBar
                       key={item.commentId}
                       item={item}
+                      diaryId={diaryId}
                       profileId={profileId}
                       setIsVisibleComment={setIsVisibleComment}
                       setSelectedCommentId={setSelectedCommentId}
@@ -125,14 +128,12 @@ const CommentList = ({ visible, setIsVisibleComment, diaryId, isComment, profile
                   diaryCommentId={selectedCommentId}
                   diaryCommentName={selectedCommentName ?? ""}
                   setSelectedCommentId={setSelectedCommentId}
-                  refetch={refetch}
                 /> // * 대댓글일 경우
               ) : (
                 <AddComment
                   diaryId={diaryId}
                   diaryCommentName={selectedCommentName}
                   setSelectedCommentId={setSelectedCommentId}
-                  refetch={refetch}
                 /> // * 댓글일 경우
               )}
             </View>
@@ -239,7 +240,7 @@ function timeAgo(isoDate: string) {
   const now = new Date().getTime();
   const past = new Date(isoDate);
   
-  past.setHours(past.getHours() + 9);
+  dayjs(isoDate).fromNow();
   const diff = now - past.getTime();
 
   const seconds = Math.floor(diff / 1000);
@@ -256,40 +257,9 @@ function timeAgo(isoDate: string) {
 
 /** Comment Bar */
 const CommentBar = (props: CommentBarProps) => {
-  const { item, setIsVisibleComment, setSelectedCommentId, setSelectedCommentName, profileId } = props;
+  const { item, setIsVisibleComment, setSelectedCommentId, setSelectedCommentName, profileId, diaryId } = props;
   const queryClient = useQueryClient();
   const currentProfile = useRecoilValue(CurrentProfileAtom);
-  const xOffset = useSharedValue(0);
-  
-  const pan = Gesture.Pan()
-    .onUpdate((e) => {
-      xOffset.value = Math.max(-HIDDEN_MENU_WIDTH, Math.min(0, e.translationX));
-    })
-    .onEnd((e) => {
-      const velocity = e.velocityX;  // 제스처의 속도
-      
-      if (xOffset.value < -HIDDEN_MENU_WIDTH / 2) {
-        // 왼쪽으로 스와이프
-        xOffset.value = withTiming(-HIDDEN_MENU_WIDTH, {
-          duration: TIMING_DURATION,
-          easing: Easing.bezier(0.25, 0.1, 0.25, 1),  // 부드러운 이징
-        });
-      } else {
-        // 원위치로 돌아가기
-        xOffset.value = withSpring(0, {
-          velocity: velocity,        // 현재 속도 반영
-          damping: 15,              // 감쇠
-          stiffness: 150,           // 강성
-          mass: 0.5                 // 질량
-        });
-      }
-    });
-
-  const rStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: xOffset.value }],
-    };
-  });
 
   //댓글 삭제
   const { mutate: deleteCommentMutate } = useMutation(
@@ -303,11 +273,14 @@ const CommentBar = (props: CommentBarProps) => {
             text1: "댓글이 삭제되었습니다.",
           });
 
-          //setIsVisibleComment(false);
-          await queryClient.invalidateQueries({
+          // 댓글 목록 다시 불러오기
+          queryClient.invalidateQueries({
             queryKey: [QueryKey.COMMENT_LIST, diaryId],
           });
-          //일지 목록 쿼리를 무효화함
+          // 대댓글 목록 다시 불러오기
+          queryClient.invalidateQueries({
+            queryKey: [QueryKey.REPLY_LIST, item.commentId],
+          });
         }
       },
       onError: (error) => {
@@ -315,6 +288,7 @@ const CommentBar = (props: CommentBarProps) => {
       },
     }
   );
+
   // 댓글 삭제
   const handleDelete = async (commentId: number, profileId: number) => {
     console.log(commentId, profileId);
@@ -326,7 +300,7 @@ const CommentBar = (props: CommentBarProps) => {
   };
 
   //(댓글 클릭 시) 대댓글 불러오기
-  const { data: replyList, refetch } = useQuery({
+  const { data: replyList } = useQuery({
     queryKey: [QueryKey.REPLY_LIST, item.commentId],
     queryFn: () => DiaryService.diary.replyList(item.commentId, profileId, 1, 15),
   });
@@ -353,9 +327,14 @@ const CommentBar = (props: CommentBarProps) => {
             text1: "대댓글이 삭제되었습니다.",
           });
 
-          //setIsVisibleComment(false);
-          //await queryClient.invalidateQueries([QueryKey.COMMENT_LIST]);
-          //일지 목록 쿼리를 무효화함
+          // 댓글 목록 다시 불러오기
+          queryClient.invalidateQueries({
+            queryKey: [QueryKey.COMMENT_LIST, diaryId],
+          });
+          // 대댓글 목록 다시 불러오기
+          queryClient.invalidateQueries({
+            queryKey: [QueryKey.REPLY_LIST, item.commentId],
+          });
         }
       },
       onError: (error) => {
@@ -366,7 +345,7 @@ const CommentBar = (props: CommentBarProps) => {
 
   // 대댓글 삭제
   const handleDeleteReply = async (replyId: number) => {
-    console.log(replyId);
+    console.log('profileId', profileId);
     if (replyId !== null) {
       deleteReplyMutate({ replyId: replyId });
     } else {
@@ -389,7 +368,7 @@ const CommentBar = (props: CommentBarProps) => {
         {replies.totalCount > 0 ?
           replies.replies.map((reply, index) => (
             <SwipeableComment
-              key={index}
+              key={reply.replyId}
               item={reply}
               onDelete={() => handleDeleteReply(reply.replyId)}
               isReply={true}
