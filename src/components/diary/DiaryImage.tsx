@@ -22,36 +22,12 @@ const IMAGE_EXTENSIONS = ['jpg', 'png', 'mp4'];
  * TODO: 백엔드 API 수정 후 Fallback 로직 제거
  */
 const DiaryImage: React.FC<DiaryImageProps> = ({ uri, style }) => {
-    const [currentExtensionIndex, setCurrentExtensionIndex] = useState(0);
-    const [currentUri, setCurrentUri] = useState('');
     const [hasError, setHasError] = useState(false);
-
-    // URI 변경 시 첫 번째 확장자로 초기화
-    useEffect(() => {
-        setCurrentExtensionIndex(0);
-        setHasError(false);
-
-        // 첫 번째 확장자로 URI 생성
-        const uriWithExtension = `${uri}.${IMAGE_EXTENSIONS[0]}`;
-        setCurrentUri(uriWithExtension);
-    }, [uri]);
 
     // 이미지 로드 실패 시 다음 확장자로 재시도
     const handleError = () => {
-        const nextIndex = currentExtensionIndex + 1;
-
-        // 모든 확장자를 시도한 경우 플레이스홀더 표시
-        if (nextIndex >= IMAGE_EXTENSIONS.length) {
-            setHasError(true);
-            return;
-        }
-
-        // 다음 확장자로 재시도
-        const nextExtension = IMAGE_EXTENSIONS[nextIndex];
-        const uriWithExtension = `${uri}.${nextExtension}`;
-
-        setCurrentExtensionIndex(nextIndex);
-        setCurrentUri(uriWithExtension);
+        console.log(`일지 이미지 로드 실패, imageUri : ${uri}`);
+        setHasError(true);
     };
 
     if (hasError) {
@@ -70,7 +46,7 @@ const DiaryImage: React.FC<DiaryImageProps> = ({ uri, style }) => {
 
     return (
         <Image
-            source={{ uri: currentUri }}
+            source={{uri}}
             style={style}
             onError={handleError}
         />
