@@ -9,6 +9,11 @@ import { minuteTickSelector } from "../../recoil/MinuteTickAtom";
 import { ToDoService } from "../../service/ToDoService";
 import { Colors } from "../../styles/Colors";
 import BasicCheckbox from "../../components/BasicCheckbox";
+import { useNavigation } from "@react-navigation/native";
+import { StackNavigationProp } from "@react-navigation/stack";
+import { RootStackParamList } from "../../navigation/types"; 
+import { ScreenName } from "../../statics/constants/ScreenName";
+import { IAddTodo } from "../../../types/AddTodo";
 
 interface ToDoCardProps {
   todo: IToDoList;
@@ -134,6 +139,7 @@ const PetBadge = ({ pet }: { pet: { id: number; name: string } }) => {
 
 const ToDoCard = ({ todo, onDelete, isChecked, onCheckChange, onClickUpdateTodo, style }: ToDoCardProps) => {
   // 현재 시간 획득 및 매 분(00초) 마다 리렌더링
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const curTime = useRecoilValue(minuteTickSelector);
   const todoTime = todo.time || "18:00";
   const isPastDue = isPast(curTime, todoTime);
@@ -149,69 +155,73 @@ const ToDoCard = ({ todo, onDelete, isChecked, onCheckChange, onClickUpdateTodo,
       }
   }
 
+  const onUpdate = async (item: IAddTodo) => {
+    navigation.navigate(ScreenName.UpdateTodo, { item });
+  };
+
   const hiddenContent = (
     <View style={styles.hiddenContent}>
       <Pressable onPress={() => onDelete()}>
         <Text style={styles.hiddenMenuText}>삭제</Text>
       </Pressable>
       <View style={{ width: 24, height: 1, backgroundColor: Colors.White, marginVertical: 15 }} />
-      <Pressable onPress={onClickUpdateTodo}>
+      <Pressable onPress={() => onUpdate(todo)}>
         <Text style={styles.hiddenMenuText}>수정</Text>
       </Pressable>
     </View>
   );
 
-    return (
-      <SwipeableCard
-        containerStyle={[styles.container, style]}
-        cardStyle={styles.card}
-        hiddenCardStyle={styles.hidden_card}
-        hiddenMenuWidth={HIDDEN_MENU_WIDTH}
-        timingDuration={TIMING_DURATION}
-        hiddenContent={hiddenContent}
-      >
-        <View style={[styles.cardContent, { opacity: isChecked ? "0.5" : "1" }]}>
-          <View style={[styles.leftSide, { borderLeftColor: todo.color }]}>
-            <View style={{ marginVertical: 10 }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
-                {todo.content ? todo.content : todo.tag}
-              </Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row' }}>
-                {todo.pets.map((pet, index) => (
-                  <PetBadge key={`pet-${pet.id}-${index}`} pet={pet} />
-                ))}
-              </View>
-            </View>
-            <View style={{ flexDirection: "row", alignItems: 'center', marginTop: 5 }}>
-              <ClockIcon width={24} height={24} color={isPast(curTime, todoTime) ? Colors.FF9999 : Colors.Black} />
-              {/* TODO 폰트 font-family: Pretendard-Bold */}
-              <Text style={{ fontSize: 16, textDecorationLine: isPastDue ? "line-through" : "none", color: isPastDue ? Colors.FF9999 : Colors.Black, fontWeight: "600", marginLeft: 8, lineHeight: 36 }}>{formatTime(todoTime)}</Text>
-              <Text style={{ fontSize: 14, color: Colors.Gray838383, marginLeft: 8, lineHeight: 36 }}>{todoUnit(todo.unit)}</Text>
+  return (
+    <SwipeableCard
+      containerStyle={[styles.container, style]}
+      cardStyle={styles.card}
+      hiddenCardStyle={styles.hidden_card}
+      hiddenMenuWidth={HIDDEN_MENU_WIDTH}
+      timingDuration={TIMING_DURATION}
+      hiddenContent={hiddenContent}
+    >
+      <View style={[styles.cardContent, { opacity: isChecked ? "0.5" : "1" }]}>
+        <View style={[styles.leftSide, { borderLeftColor: todo.color }]}>
+          <View style={{ marginVertical: 10 }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
+              {todo.content ? todo.content : todo.tag}
+            </Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row' }}>
+              {todo.pets.map((pet, index) => (
+                <PetBadge key={`pet-${pet.id}-${index}`} pet={pet} />
+              ))}
             </View>
           </View>
-          <View style={styles.rightSide}>
-            <View style={{ }}>
-              <BasicCheckbox
-                id={String(todo.id)}
-                label=''
-                isChecked={isChecked}
-                onValueChangeHandler={onCheckChange}
-              />
-            </View>
-            {todo.completeProfileImage ?
-              <View style={styles.profile}>
-                <Image source={require("../../assets/images/2a820159-1f51-473a-a11c-764539054ca0.jpg")} style={{ position: 'absolute', height: 30, width: 30, zIndex: 3 }} />
-                <Image source={{ uri: `${IMAGE_BASE_URL}/${todo.completeProfileImage}` }} style={{ height: 30, width: 30 }} />
-              </View>
-              :
-              <Pressable onPress={() => ToDoService.todo.check(String(todo.id))} style={{ ...styles.profile, ...styles.check_box }} />
-            }
+          <View style={{ flexDirection: "row", alignItems: 'center', marginTop: 5 }}>
+            <ClockIcon width={24} height={24} color={isPast(curTime, todoTime) ? Colors.FF9999 : Colors.Black} />
+            {/* TODO 폰트 font-family: Pretendard-Bold */}
+            <Text style={{ fontSize: 16, textDecorationLine: isPastDue ? "line-through" : "none", color: isPastDue ? Colors.FF9999 : Colors.Black, fontWeight: "600", marginLeft: 8, lineHeight: 36 }}>{formatTime(todoTime)}</Text>
+            <Text style={{ fontSize: 14, color: Colors.Gray838383, marginLeft: 8, lineHeight: 36 }}>{todoUnit(todo.unit)}</Text>
           </View>
         </View>
-      </SwipeableCard>
-    );
+        <View style={styles.rightSide}>
+          <View style={{ }}>
+            <BasicCheckbox
+              id={String(todo.id)}
+              label=''
+              isChecked={isChecked}
+              onValueChangeHandler={onCheckChange}
+            />
+          </View>
+          {todo.completeProfileImage ?
+            <View style={styles.profile}>
+              <Image source={require("../../assets/images/2a820159-1f51-473a-a11c-764539054ca0.jpg")} style={{ position: 'absolute', height: 30, width: 30, zIndex: 3 }} />
+              <Image source={{ uri: `${IMAGE_BASE_URL}/${todo.completeProfileImage}` }} style={{ height: 30, width: 30 }} />
+            </View>
+            :
+            <Pressable onPress={() => ToDoService.todo.check(String(todo.id))} style={{ ...styles.profile, ...styles.check_box }} />
+          }
+        </View>
+      </View>
+    </SwipeableCard>
+  );
 };
 
 const styles = StyleSheet.create({

@@ -1,31 +1,28 @@
 import {
   useMutation,
-  useQuery,
 } from "@tanstack/react-query";
 import React, { useState } from "react";
-import { Pressable, StyleSheet, View, Image, TextInput, Text } from "react-native";
+import { Pressable, StyleSheet, View, TextInput } from "react-native";
 import Toast from "react-native-toast-message";
-import { User, DeleteIcon } from "../../assets/svg";
+import { DeleteIcon } from "../../assets/svg";
 import Title from "../../components/text/Title";
 import { DiaryService } from "../../service/DiaryService";
 import { QueryKey } from "../../statics/constants/Querykey";
 import { Colors } from "../../styles/Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useController, Controller, Control, useForm } from "react-hook-form";
-import InputBox from "../../components/Input/InputBox";
+import { useController, useForm } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 
 export interface CommentProps {
   diaryId?: number | null;
   diaryCommentId?: number | null;
   diaryCommentName: string;
-  setSelectedCommentId: () => void;
-  refetch: () => void;
+  setSelectedCommentId: (id: number | null) => void;
 }
 
 const AddComment = (props: CommentProps) => {
-  const baseUrl = process.env.IMAGE_BASE_URL;
-  
-  const { diaryId, refetch, diaryCommentId, diaryCommentName, setSelectedCommentId } = props;
+  const queryClient = useQueryClient();
+  const { diaryId, diaryCommentId, diaryCommentName, setSelectedCommentId } = props;
   const [isInputText, setIsInputText] = useState<boolean>(false);
 
   const methods = useForm({
@@ -34,7 +31,7 @@ const AddComment = (props: CommentProps) => {
     },
   });
 
-  const { control, addComment: formSubmit } = methods;
+  const { control, getValues, reset } = methods;
   const { field } = useController({
     control,
     name: 'comment',
@@ -52,7 +49,13 @@ const AddComment = (props: CommentProps) => {
             type: 'success',
             text1: '댓글이 등록되었습니다.',
           });
-          refetch();
+          reset({ comment: '' });
+          setIsInputText(false);
+
+          // 댓글 목록 다시 불러오기
+          queryClient.invalidateQueries({
+            queryKey: [QueryKey.COMMENT_LIST, diaryId],
+          });
         }
       },
       onError: (error) => {
@@ -71,7 +74,14 @@ const AddComment = (props: CommentProps) => {
             type: 'success',
             text1: '대댓글이 등록되었습니다.',
           });
-          refetch();
+          reset({ comment: '' });
+          setIsInputText(false);
+          closeReply();
+
+          // 대댓글 목록 다시 불러오기
+          queryClient.invalidateQueries({
+            queryKey: [QueryKey.REPLY_LIST, diaryCommentId],
+          });
         }
       },
       onError: (error) => {
@@ -83,35 +93,47 @@ const AddComment = (props: CommentProps) => {
   // 댓글 입력버튼 클릭 시
   const addComment = async() => {
     const profile = await AsyncStorage.getItem("userInfo");
-
-    if (profile) {
-      const parsedProfile = JSON.parse(profile);
-      const profileId = parsedProfile.id
-      const content = methods.getValues('comment');
-
-      if (diaryCommentId) { // 대댓글일 경우
-      console.log('reply...', profileId, diaryCommentId, content);
-        addReplyMutate({profileId: profileId, diaryCommentId: diaryCommentId, content: content});
-      } else { // 댓글일 경우
-      console.log('comment...', profileId, diaryId, content);
-        addCommentMutate({profileId: profileId, diaryId: diaryId, content: content});
-      }
-    } else {
-      console.error("comment error!");
+    if (!profile) {
+      console.error("userInfo not found");
+      return;
     }
+    
+    const parsedProfile = JSON.parse(profile);
+    const profileId = parsedProfile.id
+
+    const content = getValues("comment").trim();
+    if (!content) return;
+
+    if (diaryCommentId) { // 대댓글일 경우
+      console.log('reply...', profileId, diaryCommentId, content);
+      addReplyMutate({
+        profileId,
+        diaryCommentId,
+        content,
+      });
+      return;
+    }
+
+    if (!diaryId) {
+      console.error("diaryId is missing");
+      return;
+    }
+
+    console.log('comment...', profileId, diaryId, content);
+    addCommentMutate({ // 댓글일 경우
+      profileId,
+      diaryId,
+      content,
+    });
   }
 
   // 댓글 입력 시
   const handleOnChangeComment = (inputText:string) => {
-    if(inputText !== ''){
-      setIsInputText(true);
-    } else {
-      setIsInputText(false);
-    }
+    setIsInputText(inputText.trim().length > 0);
   }
 
   const closeReply = () => {
-    setSelectedCommentId('');
+    setSelectedCommentId(null);
   }
 
   return (
@@ -131,7 +153,10 @@ const AddComment = (props: CommentProps) => {
           //multiline
           //numberOfLines={20}
           value={field.value}
-          onChangeText={(value) => field.onChange(value) && handleOnChangeComment(value)}
+          onChangeText={(value) => {
+            field.onChange(value);
+            handleOnChangeComment(value);
+          }}
           placeholder={
             diaryCommentId ? '대댓글을 입력하세요' : '댓글을 입력하세요'
           }

@@ -135,19 +135,17 @@ export namespace ToDoService {
                 }
             }
         },
-		update: async (id: number) => {
+		update: async (todoId: number, payload) => {
 			try {
-				const response = await AxiosContext.patch(
-                    `/api/v1/todos/${id}`, 
-					{
-						headers: {
-							'Content-Type': 'application/json',
-						},
-					});
+				const response = await AxiosContext.put(`/api/v1/todos/${todoId}`, JSON.stringify(payload), {
+					headers: {
+						'Content-Type': 'application/json',
+					},
+				});
 				return { data: response.data, status: response.status };
-			} catch (error) {
-				console.error('ToDoService.todo.update:', error);
-				return { data: null, status: error || error };
+			} catch (error: any) {
+				console.error('DiaryService.diary.update:', error);
+				return { data: null, status: error?.response?.status || 500 };
 			}
 		},
         delete: async (id: number) => {

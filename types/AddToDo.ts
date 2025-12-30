@@ -45,6 +45,18 @@ export interface IAddTodo {
     repeat: IRepeat | null;
 }
 
+export interface IUpdateTodo {
+    profileId: string;
+    petIds: string[];
+    tag: ToDoType | null;
+    content: string | null;
+    time: string;
+    isAllDay: boolean;
+    color: string;
+    isUsingAlarm: boolean;
+    repeat: string | null;
+}
+
 export interface IListToDoParam {
     start: string;
     end: string;

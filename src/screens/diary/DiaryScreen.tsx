@@ -39,22 +39,17 @@ const DiaryScreen = () => {
   //일지 리스트
   //TODO: profile api 가져와서 profileId에 넣기
   const { data, fetchNextPage, isFetchingNextPage, hasNextPage, refetch, isRefetching } =
-    useInfiniteQuery(
-      [QueryKey.DIARY_LIST],
-      ({ pageParam = 1 }) => DiaryService.diary.list(1, pageParam, 5),
-      {
-        getNextPageParam: (lastPage, allPages) => {
-          const totalCount = lastPage?.data?.data.totalCount;
-          const currentPageDataCount = lastPage?.data?.data.diaries.length;
+    useInfiniteQuery({
+      queryKey: [QueryKey.DIARY_LIST],
+      queryFn: ({ pageParam = 1 }) => DiaryService.diary.list(1, pageParam, 5),
+      getNextPageParam: (lastPage, allPages) => {
+        const totalCount = lastPage?.data?.data.totalCount;
+        const currentPageDataCount = lastPage?.data?.data.diaries.length;
 
-          if (currentPageDataCount < totalCount) {
-            return allPages.length + 1;
-          } else {
-            return undefined;
-          }
-        },
-      }
-    );
+        return currentPageDataCount < totalCount ? allPages.length + 1 : undefined;
+      },
+    }
+  );
 
   //일지 삭제
   const { mutate: deleteDiaryMutate } = useMutation(
@@ -70,7 +65,8 @@ const DiaryScreen = () => {
 
           setIsFirstVisibleMore(false);
           setIsVisibleDelete(false);
-          await queryClient.invalidateQueries([QueryKey.DIARY_LIST]);
+          await queryClient.invalidateQueries({ queryKey: [QueryKey.DIARY_LIST] });
+          await queryClient.refetchQueries({ queryKey: [QueryKey.DIARY_LIST] });
           //일지 목록 쿼리를 무효화함
         }
       },
@@ -96,7 +92,8 @@ const DiaryScreen = () => {
     setIsVisibleComment(true);
   };
 
-  const getSelectedItem = () => {
+  // 일지 수정 페이지로 이동
+  const handleUpdateDiary = () => {
     if (selectedItem) {
       navigation.navigate(ScreenName.UpdateDiary, { item: selectedItem });
       setIsFirstVisibleMore(false);
@@ -111,7 +108,7 @@ const DiaryScreen = () => {
         <View style={[styles.footer, { marginTop: 33 }]}>
           <View style={[styles.buttonContainer, { marginRight: 10 }]}>
             <Pressable
-              onPress={getSelectedItem}
+              onPress={handleUpdateDiary}
               style={styles.buttonContainer}
             >
               <Title

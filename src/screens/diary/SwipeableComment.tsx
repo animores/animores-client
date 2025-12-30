@@ -77,7 +77,9 @@ const SwipeableComment = (props: CommentProps) => {
                 style={styles.profileImage}
             />
             ) : (
-              <User />
+              <View style={styles.userImage}>
+                <User />
+              </View>
             )}
             <View style={styles.itemContent}>
               <View style={{ flexDirection: 'row' }}>
@@ -130,6 +132,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginHorizontal: 10,
     flexDirection: "row",
+  },
+  userImage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 50,
+    marginRight: 12,
   },
   profileImage: {
     alignSelf: "center",

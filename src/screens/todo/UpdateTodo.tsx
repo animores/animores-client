@@ -1,12 +1,12 @@
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from "../../navigation/type";
-import { ScreenName } from "../../statics/constants/ScreenName";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Pressable, StyleSheet, View, Text, Modal } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../../styles/Colors";
 import HeaderNavigation from "../../navigation/HeaderNavigation";
+import { RootStackParamList } from "../../navigation/type";
+import { ScreenName } from "../../statics/constants/ScreenName";
 import { ScrollView, Switch, TextInput } from "react-native-gesture-handler";
 import { useMutation } from "@tanstack/react-query";
 import Title from "../../components/text/Title";
@@ -18,7 +18,7 @@ import { AlarmIcon, PaletteIcon, RepeatIcon, RightArrow, ScheduleIcon } from "..
 import DateTimePicker from "@react-native-community/datetimepicker";
 import BottomModal from "../../components/modal/BottomModal";
 import ToDoColors from "../../statics/constants/ToDoColors";
-import { IAddTodo, RepeatUnit, WeekDay } from "../../../types/AddToDo";
+import { IAddTodo, IUpdateTodo, RepeatUnit, WeekDay } from "../../../types/AddToDo";
 import ColorPicker from 'react-native-wheel-color-picker';
 import { ToDoService } from "../../service/ToDoService";
 import Toast from "react-native-toast-message";
@@ -27,50 +27,31 @@ import { usePetList } from "../../hooks/usePetList";
 
 const UpdateTodo = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList, ScreenName.UpdateTodo>>();
+  const route = useRoute();
+  const { item } = route.params as { item: IUpdateTodo };
+
   const methods = useForm<IAddTodo>({
     defaultValues: {
-      profileId: 1,
-      petIds: [],
-      content: null,
-      tag: null,
-      date: '',
-      time: '',
-      isAllDay: false,
-      color: ToDoColors.PURPLE,
-      isUsingAlarm: true,
-      repeat: null,
+      profileId: item.id,
+      petIds: item.pets.map((pet) => pet.id),
+      tag: item.tag,
+      content: item.content,
+      date: item.date,
+      time: item.time,
+      isAllDay: item.isAllday,
+      color: item.color,
+      isUsingAlarm: item.isUsingAlarm,
+      repeat: item.unit
+        ? {
+            unit: item.unit,
+            interval: item.intervalNum,
+            weekDays: item.weekDays,
+          }
+        : null,
     }
   })
 
   const { control, handleSubmit, setValue, getValues, watch} = methods;
-
-  //프로필 수정
-  const { mutate: todoUpdate } = useMutation({
-      mutationFn: async (id: number) => {
-          console.log("todo.edit : ", id)
-          try {
-              const response = await TodoService.todo.edit(id);
-              return response.data;
-          } catch (error) {
-              console.error('Error edit todo:', error);
-              throw error;
-          }
-      },
-      onSuccess: () => {
-          Toast.show({
-              type: 'success',
-              text1: '할일이 수정되었습니다!'
-          });
-          navigation.navigate(ScreenName.BottomTab);
-      },
-      onError: (error) => {
-          console.error('Error edit todo:', error);
-          Toast.show({
-              type: 'error',
-              text1: '할일 수정을 실패했습니다.'
-          });
-      }
-  });
   
   //펫 정보 불러오기
   const { petList } = usePetList();
@@ -82,39 +63,29 @@ const UpdateTodo = () => {
   }
 
   const [pets, setPets] = useState<IPressablePet[]>([]);
-  const [date, setDate] = useState<Date>(new Date());
+  // 로컬 Date 상태 (보기용 및 picker value로 사용)
+  const initialDateSafe = (() => {
+    try {
+      return new Date(`${getValues('date')}T${getValues('time')}`);
+    } catch {
+      return new Date();
+    }
+  })();
+  const [date, setDate] = useState<Date>(new Date(getValues('date') + 'T' + getValues('time')));
 
   // petList가 변할 때 pets 상태 업데이트
   useEffect(() => {
-    setPets(petList.map((pet: IPet) => {
+    const selectedPetIds = item.pets?.map(p => p.id) ?? [];
+
+    setPets(
+      petList.map((pet: IPet) => {
       return {
         ...pet,
-        isPressed: false
+        isPressed: selectedPetIds.includes(pet.id),
       }
     }));
-  }, [petList]);
+  }, [petList, item.pets]);
 
-  // 현재 날짜와 시간을 형식에 맞춰 date, time 에 넣어주기
-  useEffect(() => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const hour = String(date.getHours()).padStart(2, '0');
-    const minute = String(date.getMinutes()).padStart(2, '0');
-    setValue('date',(`${year}-${month}-${day}`));
-    setValue('time',(`${hour}:${minute}`));
-  }, [date, pets]);
-  
-  // 시간을 오전/오후로 나누어 표시해주는 함수
-  const timeStringConverter = (time: string): string => {
-    const [hour, minute] = time.split(':');
-    const hourNum = Number(hour);
-    const minuteNum = Number(minute);
-    if (hourNum < 12) {
-      return `오전 ${String(hourNum).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
-    }
-    return `오후 ${String(hourNum-12).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
-  }
 
   // 펫 선택시 해당 id 의 isPressed 값 변경 & petIds 에 id list 넣어주기
   const handlePetPress = useCallback(
@@ -127,7 +98,62 @@ const UpdateTodo = () => {
         setValue('petIds', clickedPetsId);
         return updatedPets;
       });
-    },[]);
+    },[setValue]);
+
+  const [title, setTitle] = useState(item.title);
+  const [description, setDescription] = useState(item.description);
+
+  // 저장된 날짜와 시간 정보 가져오기
+  const selectedDate = watch('date')
+  const selectedTime = watch('time')
+  
+  // 시간을 오전/오후로 나누어 표시해주는 함수
+  const timeStringConverter = (time: string): string => {
+    const [hour, minute] = time.split(':');
+    const hourNum = Number(hour);
+    const minuteNum = Number(minute);
+    if (hourNum < 12) {
+      return `오전 ${String(hourNum).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
+    }
+    return `오후 ${String(hourNum-12).padStart(2, '0')}:${String(minuteNum).padStart(2, '0')}`;
+  }
+
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+
+  const dateTimeFormat = (mode: 'date' | 'time', d: Date | undefined): string => {
+    if (!d) return;
+    if (mode === 'date') {
+      const year = d.getFullYear();
+      const month = pad2(d.getMonth() + 1);
+      const day = pad2(d.getDate());
+      const dateString = `${year}-${month}-${day}`;
+      setValue('date', dateString);
+      // update local date state so picker and UI reflect changes
+      setDate((prev) => {
+        // keep previous time if possible
+        const t = getValues('time') ?? `${pad2(prev.getHours())}:${pad2(prev.getMinutes())}`;
+        try {
+          return new Date(`${dateString}T${t}`);
+        } catch {
+          return d;
+        }
+      });
+    } else if (mode === 'time') {
+      const hour = pad2(d.getHours());
+      const minute = pad2(d.getMinutes());
+      const timeString = `${hour}:${minute}`;
+      setValue('time', timeString);
+      // update local date state
+      setDate((prev) => {
+        const datePart = getValues('date') ?? `${prev.getFullYear()}-${pad2(prev.getMonth()+1)}-${pad2(prev.getDate())}`;
+        try {
+          return new Date(`${datePart}T${timeString}`);
+        } catch {
+          return d;
+        }
+      });
+    }
+  }
 
   const isAllDay = watch('isAllDay');
   
@@ -176,6 +202,7 @@ const UpdateTodo = () => {
   const [colorPickerWindowSelected, setColorPickerWindowSelected] = useState<boolean>(false);
   const [useCustomColor, setUseCustomColor] = useState<boolean>(false);
   const [customColor, setCustomColor] = useState<string>('#aabbcc');
+
   const ColorPickerModal = useMemo((): React.ReactNode => {
     return (
       <Modal visible={colorPickerWindowSelected}>
@@ -305,12 +332,13 @@ const UpdateTodo = () => {
                   <Text>{unit.intervalText}</Text>
                 </View>
                 {key === 'WEEK' && <View style={{...styles.footerRepeatLineContainer, justifyContent: 'center'}}>
-                    {Object.values(weekDayList).map(({day,isClicked}) => (
-                      <Pressable style={{...styles.footerRepeatWeekDayContainer, borderColor: isClicked ? Colors.White: Colors.Pink, backgroundColor: isClicked ? Colors.Pink : Colors.White}} onPress={() => handleWeekDayPress(day)}>
-                        <Text style={{color: isClicked ? Colors.White: Colors.Pink}}>{day}</Text>
-                      </Pressable>
-                    ))}
-                    </View>}
+                  {Object.values(weekDayList).map(({day,isClicked}) => (
+                    <Pressable style={{...styles.footerRepeatWeekDayContainer, borderColor: isClicked ? Colors.White: Colors.Pink, backgroundColor: isClicked ? Colors.Pink : Colors.White}} onPress={() => handleWeekDayPress(day)}>
+                      <Text style={{color: isClicked ? Colors.White: Colors.Pink}}>{day}</Text>
+                    </Pressable>
+                  ))}
+                  </View>
+                }
               </>
               :
               <Pressable style={{...styles.footerRepeatLineContainer}} key={key} onPress={() => {
@@ -346,58 +374,90 @@ const UpdateTodo = () => {
   },[repeat, selectedUnit, intervalValue, weekDays, weekDayList]);
 
   const repeatText = repeat ? `${repeat.interval}${RepeatUnit[repeat.unit].intervalText} ${repeat.weekDays} ` : '';
-  
-  // mutation 관련
 
+  //일정 수정
   const { mutate, isLoading } = useMutation({
-    mutationFn: (data: IAddTodo) => ToDoService.todo.create(data),
-    onSuccess: () => {
-      Toast.show({
-        type: 'success',
-        text1: '일정이 추가되었습니다',
-      })
-    },
-    onError: (error) => {
-      if(axios.isAxiosError(error)) {
-        if (error.response) {
-          Toast.show({
-            type: 'error',
-            text1: error.response.data.error.message,
-          })
-        }
-      }
+    mutationFn: async (data: { todoId: number, payload: { 
+      profileId: number, 
+      petIds: number[],
+      tag: string,
+      content: string,
+      date: string,
+      time: string,
+      isAllDay: boolean,
+      color: string,
+      isUsingAlarm: boolean
+    } }) => {
+      return ToDoService.todo.update(Number(item.id), data.payload);
     }
   });
 
-  const onSubmit = (data: IAddTodo) => {
-    var isError = false;
-    var errorMessage = '';
+  const onSubmit = (data: IUpdateTodo) => {
+    try {
+      var isError = false;
+      var errorMessage = '';
 
-    if (data.tag == null && data.content == null) {
-      errorMessage = '할 일을 입력해주세요';
-      isError = true;
-    }
+      if (data.tag == null && data.content == null) {
+        errorMessage = '할 일을 입력해주세요';
+        isError = true;
+      }
 
-    if (data.petIds.length === 0) {
-      errorMessage = '펫을 선택해주세요';
-      isError = true;
-      
-    }
+      if (data.petIds.length === 0) {
+        errorMessage = '펫을 선택해주세요';
+        isError = true;
+      }
 
-    if (isError) {
-      Toast.show({
-        type: 'error',
-        text1: errorMessage,
-      })
-      return;
+      if (isError) {
+        Toast.show({
+          type: 'error',
+          text1: errorMessage,
+        })
+        return;
+      }
+
+      const payload = { 
+        profileId: data.profileId,
+        tag: data.tag,
+        content: data.content,
+        date: data.date,
+        time: data.time,
+        isAllDay: data.isAllDay,
+        color: data.color,
+        isUsingAlarm: data.isUsingAlarm,
+      };
+
+      mutate({ todoId: Number(item.id), payload }, {
+        onSuccess: () => {
+          Toast.show({
+            type: 'success',
+            text1: '일지가 수정되었습니다.',
+          });
+          navigation.goBack();
+        },
+        onError: (error) => {
+          console.error('Update error:', error);
+          if (axios.isAxiosError(error) && error.response?.data?.error?.message) {
+            Toast.show({ type: 'error', text1: error.response.data.error.message });
+          } else {
+            Toast.show({ type: 'error', text1: '일정 수정에 실패했습니다.' });
+          }
+        }
+      });
+    } catch (error) {
+      console.error("onSubmit error:", error);
+      Toast.show({ type: 'error', text1: '알 수 없는 오류가 발생했습니다.' });
     }
-    
-    console.log(data);
-    mutate(data);
   };
 
   useEffect(() => {
-  }, [isLoading]);
+    // 만약 외부에서 date/time이 변경되는 케이스가 있으면 로컬 date를 동기화
+    try {
+      const d = new Date(`${getValues('date')}T${getValues('time')}`);
+      setDate(d);
+    } catch {
+      // 무시
+    }
+  }, [selectedDate, selectedTime]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -476,17 +536,18 @@ const UpdateTodo = () => {
                       name='isAllDay'
                       render={({ field: { value, onChange } }) => (
                         <>
-                        <View style={{flexDirection:"row"}}>
-                          <ScheduleIcon/><Text style={{marginLeft: 10}}>하루종일</Text>
-                        </View>
-                        <Switch 
-                        thumbColor={value ? Colors.Pink : "#ededed"} trackColor={{false: "#b2b2b2", true: "#FE9CBD"}}
-                        onChange={() => {
-                          onChange(!value);
-                        }}
-                        value={getValues('isAllDay')}></Switch>
-                        </>)}
-                      />
+                          <View style={{flexDirection:"row"}}>
+                            <ScheduleIcon/><Text style={{marginLeft: 10}}>하루종일</Text>
+                          </View>
+                          <Switch 
+                          thumbColor={value ? Colors.Pink : "#ededed"} trackColor={{false: "#b2b2b2", true: "#FE9CBD"}}
+                          onChange={() => {
+                            onChange(!value);
+                          }}
+                          value={getValues('isAllDay')}></Switch>
+                        </>
+                      )}
+                    />
                   </View>
                   <View style={styles.timeLineContainer}>
                     <Controller
@@ -497,19 +558,21 @@ const UpdateTodo = () => {
                           setTimePickerSelected(true);
                           setTimePickerMode('date');
                         }}>
-                          <Text>{value}</Text>
+                          <Text>{getValues("date")}</Text>
                         </Pressable>
                       )}
                     />
                     <Controller
                       control={control}
                       name="time"
-                      render={({ field: { value } }) => (
+                      render={({ field: { onChange, onBlur, value } }) => (
                         <Pressable style={styles.timeBox} onPress={() =>{
                           setTimePickerSelected(true);
                           setTimePickerMode('time');
                         }} disabled={isAllDay}>
-                          <Text style={{color: isAllDay ? Colors.Gray838383: Colors.Black}}>{timeStringConverter(value)}</Text>
+                          <Text style={{color: isAllDay ? Colors.Gray838383: Colors.Black}}>
+                            {timeStringConverter(getValues("time"))}
+                          </Text>
                         </Pressable>
                       )}
                     />
@@ -517,14 +580,27 @@ const UpdateTodo = () => {
                   {timePickerSelected && (
                     <View style={styles.dateTimePickerWrap}>
                       <DateTimePicker
-                        value={date}
+                        value={(() => {
+                          const d = watch('date') ?? getValues('date');
+                          const t = watch('time') ?? getValues('time');
+                          // 안전하게 Date 객체 생성: fallback to current date/time
+                          try {
+                            return new Date(`${d}T${t}`);
+                          } catch {
+                            return new Date();
+                          }
+                        })()}
                         mode={timePickerMode as any}
                         is24Hour={true}
                         display="default"
-                        onChange={(event, selectedDate) => {
-                          const currentDate = selectedDate || date;
+                        onChange={(event, picked) => {
+                          // Android에서 dismissed될 때 picked는 undefined일 수 있음
+                          if (picked && picked instanceof Date) {
+                            dateTimeFormat(timePickerMode as 'date' | 'time', picked);
+                          }
+                          // iOS는 picker가 계속 보여지는 경우가 있으므로 플랫폼별 처리 필요.
+                          // 간단히 닫도록 처리:
                           setTimePickerSelected(false);
-                          setDate(currentDate);
                         }}
                         style={styles.dateTimePicker}
                       />
@@ -539,7 +615,7 @@ const UpdateTodo = () => {
                       <Text style={{ marginLeft: 10}}>색상</Text>
                     </View>
                     <View style={{flexDirection:"row", alignItems: "center"}}>
-                      <View style={[styles.colorCircle, {backgroundColor: color}]}/>                      
+                      <View style={[styles.colorCircle, {backgroundColor: watch("color")}]}/>                      
                       <Pressable onPress={() => {
                         setColorWindowSelected(true);
                       }}>
@@ -552,6 +628,7 @@ const UpdateTodo = () => {
                 isVisible={colorWindowSelected}
                 onClose={() => setColorWindowSelected(!colorWindowSelected)}
                 footer={() => footerColor}/>
+
                 {Separator}
                 <View style={styles.timeSectionContainer}>
                   <View style={{...styles.timeLineContainer, height: 30}}>
