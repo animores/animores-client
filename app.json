@@ -9,19 +9,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#E84178"
     },
-    "plugins": [
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "./src/assets/fonts/Pretendard-Regular.otf",
-            "./src/assets/fonts/Pretendard-Medium.otf",
-            "./src/assets/fonts/Pretendard-SemiBold.otf",
-            "./src/assets/fonts/Pretendard-Bold.otf"
-          ]
-        }
-      ]
-    ],
     "ios": {
       "bundleIdentifier": "com.wooki27.animores-app"
     }
